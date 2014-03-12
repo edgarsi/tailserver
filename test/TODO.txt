@@ -1,0 +1,27 @@
+
+somewhere must be tools to test on vast amount of platforms automatically.
+test with 65535 and more clients sending SYN without a followup
+test with a socket file path ""
+
+
+
+
+tail_using_logfile.sh
+===
+usage=$'\n\t'"Usage: $0 [<-c|-n> K] <compressed_file> <decompressor> <tailserver_pid>"
+usage="$usage"$'\n\t'"First of all, assumes you've launched your program like this: program | cat -n | tailserver <logfile> | <compressor> > <compressed_file>"
+usage="$usage"$'\n\t'"Yes, this means you will have line numbers in your log files. If you didn't, how would you merge?"
+usage="$usage"$'\n\t'"Output the last lines or bytes by decompressing <compressed_file>. "
+usage="$usage""Add the lines from tailserver (which are not in the compressed file yet). Continue following tail."
+tail_args=read cnK
+logfile=${1?$usage}
+decompressor=${2?$usage}
+tailserver_pid=${3?$usage}
+
+kill -STOP $tailserver_pid
+socat -u UNIX-CONNECT:logfile.sock - | tail -n 1000 > tmp_tail.txt
+zcat logfile.gz | tail $tail_args | sort -nm - tmp_tail.txt  <- What are the memory requirements for this?
+	| tail $tail_args
+{ sleep 1; kill -CONT $tailserver_pid; } & # any better way?
+socat -u UNIX-CONNECT:logfile.sock - | tail -n 0 -f
+
