@@ -10,21 +10,20 @@ tailserver
 Compressing can save a lot of IO waste. `tailserver` allows to compress and avoid losing the ability to `tail -f`. There are alternatives, see below.
 
 ### Description (WARNING: pre-alpha...)
-The utility reads standard input and immediately outputs it to standard output. 
-Additionaly, it creates a unix domain socket server for output broadcasting. 
-The last N lines will always be output to new clients, allowing for `tail -n <lines> -f` as long as you don't exceed N.
-See MANPAGE.
+The `tailserver` command reads stdin and copies it to stdout (like 'cat' does).  
+Additionaly, it creates a UNIX domain socket server for output broadcasting. The last N lines will be output to clients (use `tailclient` for that). Any new data that tailserver reads is passed to clients forever (just like 'tail -f').  
+See MANPAGE (or 'tailserver --help') for more.
 
 ### Example
-Instead or running 
-`myprogram | gzip > logfile.gz` 
-you can run 
+Instead or running  
+`myprogram | gzip > logfile.gz`  
+you can run  
 `myprogram | tailserver -s logfile.sock | gzip > logfile.gz`
 
 Tailing:
-`socat -u UNIX-CONNECT:logfile.sock - | tail -n 100 -f`
-*TODO: I should deploy a `tailclient <file>` script as a cleaner rename for "socat -u UNIX-CONNECT:<file> -"*
-*TODO: It could also handle the situations where to file does not exist - choice of wait or bail.*
+`socat -u UNIX-CONNECT:logfile.sock - | tail -n 100 -f`  
+*TODO: I should deploy a `tailclient <file>` script as a cleaner rename for "socat -u UNIX-CONNECT:<file> -"*  
+*TODO: It could also handle the situations where to file does not exist - choice of wait or bail.*  
 
 ### Advanced example 
 This example combines all of these:
@@ -32,7 +31,7 @@ This example combines all of these:
 * Grep for "ERROR", store into another file
 * Get the last 100 lines if works for more than an hour, and 10 lines each 10 minutes from then on 
 
-`
+```
 tailclient -w logfile.sock | grep ERROR > errorfile.txt &
 {	sleep 3600
 	echo "[Works for more than an hour at $(date)]"
@@ -45,19 +44,19 @@ tailclient -w logfile.sock | grep ERROR > errorfile.txt &
 } > longrun_debug.txt & WAITPID=$!
 myprogram | tailserver -w logfile.sock | lzop > logfile.lzo
 kill $WAITPID
-`
+```
 *TODO: Test this!*
 
 Look at how pretty it is!
 
 ### Install
-Dependencies: cmake, libev
-Dependencies: tailclient uses `socat`. *TODO: Make a version which doesn't use socat.*
-git clone git://github.com/edgarsi/tailserver.git
+Dependencies: cmake, libev  
+Dependencies: tailclient uses `socat`. *TODO: Make a version which doesn't use socat.* 
+```git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
 sh ./configure
 make
-sudo make install
+sudo make install```
 
 ### Alternatives to tailserver
 * *If you only need `tail -f`, not the `-n`*, 
