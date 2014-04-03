@@ -52,11 +52,13 @@ Look at how pretty it is!
 ### Install
 Dependencies: cmake, libev  
 Dependencies: tailclient uses `socat`. *TODO: Make a version which doesn't use socat.* 
-```git clone git://github.com/edgarsi/tailserver.git
+```
+git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
 sh ./configure
 make
-sudo make install```
+#sudo make install <- this is not tested and will probably not work. launch ./build/src/tailserver directly instead
+```
 
 ### Alternatives to tailserver
 * *If you only need `tail -f`, not the `-n`*, 
