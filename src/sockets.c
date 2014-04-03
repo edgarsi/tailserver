@@ -19,26 +19,26 @@
    tee.c: Mike Parker, Richard M. Stallman, and David MacKenzie
    tail.c: Paul Rubin, David MacKenzie, Ian Lance Taylor, Giuseppe Scrivano
    Socket handling from mysqld.cc (GPL2=)
-   Note that since MySQL does not include the "or any later version" clause, the license of tailserver 
-   is forced to be GPL2 by the magic of law.
+   Note that since MySQL does not include the "or any later version" clause,
+   therefore the acting license of tailserver is forced to be GPL2 by the magic of law.
    
 */
 
 #include "config.h"
 
-/*#include <config.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <getopt.h>
+#include "sockets.h"
+#include "buffer.h"
+#include "strmov.h"
 
-#include "system.h"
-#include "error.h"
-#include "fadvise.h"
-#include "stdio--.h"
-#include "xfreopen.h"
+#include <sys/stat.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
 
-//#include <sys/select.h>
-#include <sys/socket.h>*/ 
+#ifdef HAVE_FCNTL_NONBLOCK
+#include <fcntl.h>
+#endif
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own event handling */
 #include <ev.h>
@@ -46,32 +46,85 @@
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
 #else
-/* As long as I've not implemented an IP server, sockets are a requirement. */   
+/* Unix domain sockets are needed - all communication between tailserver and tailclient happens through them. */   
 # error "Missing required sys/un.h definitions of UNIX domain sockets!" 
 #endif
+
+#define debug(...)
+/*#define debug(x) fputs(x, stderr)*/
+
 
 /* Test accept this many times. */
 #define MAX_ACCEPT_RETRY 10
 
 #define INVALID_SOCKET -1
 
+
+typedef unsigned int uint;
+typedef SOCKET_SIZE_TYPE size_socket;
+
+
+static const char* socket_file_path;
 static int unix_sock;
 static int socket_flags;
 static uint accept_error_count;
 
 static ev_io unix_sock_watcher;
 
+typedef struct tailer_t {
+    int socket;
+    ev_io readable_watcher;
+    struct tailer_t* prev;
+    struct tailer_t* next;
+} tailer_t;
 
-/* Called when a tailer socket is active. False positives possible. */
-static void tailer_cb (EV_P_ ev_io *w, int revents)
+static tailer_t* first_tailer;
+
+
+static void tailer_final (tailer_t* tailer);
+
+static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t size)
 {
-    fcntl(sock, F_SETFL, O_NONBLOCK);
+    ssize_t n;
+
+    do {
+        n = write(tailer->socket, buf, size);
+    } while (n < 0 && errno == EINTR);
+
+    if (n < size) {
+        perror(_("Writing to client encountered an error"));
+    }
+    return n;
+}
+
+void sockets_write_blocking (char* buf, ssize_t size)
+{
+    tailer_t* tailer = first_tailer;
+    while (tailer) {
+        
+        ssize_t size_written = tailer_write_blocking(tailer, buf, size);
+        
+        if (size_written < size) {
+            debug("misbehaving client\n");
+            tailer_t* next = tailer->next;
+            tailer_final(tailer); /* Destroy misbehaving clients */
+            tailer = next;
+        } else {
+            tailer = tailer->next;
+        }
+    }
+}
+
+/* Called when a tailer socket possibly sends something. */
+static void tailer_readable_cb (EV_P_ ev_io* w, int revents)
+{
+    tailer_t* tailer = (tailer_t*)((char*)w - offsetof(tailer_t, readable_watcher));
 
     bool error = false;
     char buf[1024];
-    ssize_t res = read(vio->sd, buf, sizeof(buf));
+    ssize_t res = read(tailer->socket, buf, sizeof(buf));
     if (res > 0) {
-        /* Client has sent something. Ignoring seems nicer than killing the connection. */
+        /* Client has sent something. Ignoring seems nicer than killing the connection. Undocumented. */
     } else
     if (res == 0) {
         /* EOF */
@@ -81,13 +134,45 @@ static void tailer_cb (EV_P_ ev_io *w, int revents)
         error = true;
     }
 
-    if (!error) {
-        fcntl(sock, F_SETFL, 0);
-    }
-
     if (res == 0 || error) {
-        todo remove this connection
+        debug("eof or error, ending client\n");
+        tailer_final(tailer);
     }
+}
+
+tailer_t* tailer_init (int socket)
+{
+    /* TODO: malloc error handling! */
+    tailer_t* tailer = malloc(sizeof(tailer_t));
+    tailer->prev = NULL;
+    tailer->next = first_tailer;
+    if (first_tailer) {
+        first_tailer->prev = tailer;
+    }
+    first_tailer = tailer;
+
+    tailer->socket = socket;
+    ev_io_init(&tailer->readable_watcher, tailer_readable_cb, socket, EV_READ);
+    ev_io_start(EV_DEFAULT_UC_ &tailer->readable_watcher);
+    
+    return tailer;
+}
+
+void tailer_final (tailer_t* tailer)
+{
+    ev_io_stop(EV_DEFAULT_UC_ &tailer->readable_watcher);
+    shutdown(tailer->socket, SHUT_RDWR);
+    close(tailer->socket); /* TODO: I think the code would be easier to read if local tailer_t instances were called "t", not "tailer" */
+
+    if (tailer->prev) {
+        tailer->prev->next = tailer->next;
+    } else {
+        first_tailer = tailer->next;
+    }
+    if (tailer->next) {
+        tailer->next->prev = tailer->prev;
+    }
+    free(tailer);
 }
 
 /* Called when listener socket is active. False positives possible. */
@@ -95,12 +180,17 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
 {
     struct sockaddr_storage cAddr;
     int new_sock = INVALID_SOCKET;
+    uint retry;
 
     /* Is this a new connection request? */
-    /* TODO: Look first, then try to accept! */
+    /* TODO: Look first, then try to accept! (I think I've seen a flag somewhere which indicates if connections are pending to be accepted) */
 
+    debug("new connection request, apparently\n");
+
+#ifdef HAVE_FCNTL_NONBLOCK
     fcntl(unix_sock, F_SETFL, socket_flags | O_NONBLOCK); /* mysqld.cc is really conservative... so am I. */
-    for (uint retry=0; retry < MAX_ACCEPT_RETRY; retry++) {
+#endif
+    for (retry=0; retry < MAX_ACCEPT_RETRY; retry++) {
         size_socket length = sizeof(struct sockaddr_storage);
         
         new_sock = accept(unix_sock, (struct sockaddr *)(&cAddr), &length);
@@ -109,9 +199,11 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
             break;
         }
         perror(_("Retrying accept")); /* This should never happen? */
+#ifdef HAVE_FCNTL_NONBLOCK
         if (retry == MAX_ACCEPT_RETRY - 1) {
-            fcntl(sock, F_SETFL, socket_flags); /* Try without O_NONBLOCK */
+            fcntl(unix_sock, F_SETFL, socket_flags); /* Try without O_NONBLOCK */
         }
+#endif
     }
     fcntl(unix_sock, F_SETFL, socket_flags);
     if (new_sock == INVALID_SOCKET) {
@@ -132,25 +224,62 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         {
             perror("Error on new connection socket");
             shutdown(new_sock, SHUT_RDWR);
-            closesocket(new_sock);
+            close(new_sock);
             return;
         }
     }
 
-    fcntl(new_sock, F_SETFL, 0); /* vio.c (mysql) thinks this may be useful... */
+#ifdef HAVE_FCNTL_NONBLOCK
+    fcntl(new_sock, F_SETFL, O_NONBLOCK);
+#endif
 
-    /* Add the new connection */
+    debug("creating client\n");
 
-    add to some linked list of tailer_t
+    {
+        /* Add the new connection */
 
-    add to loop to check for eof and write-ready
+        tailer_t* tailer = tailer_init(new_sock);
+
+        /* Send the tail */
+
+        const char* pos = buffer_get_tail_chunk();
+        size_t offset = buffer_get_tail_offset();
+        size_t chunk_size = buffer_chunk_size(pos);
+
+        while (chunk_size > 0) {
+            ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
+            if (size_written < (ssize_t)(chunk_size - offset)) {
+                debug("written too little\n");
+                tailer_final(tailer);
+                break;
+            }
+            debug("looking for the next chunk\n");
+            pos = buffer_advance_chunk(pos);
+            offset = 0;
+            chunk_size = buffer_chunk_size(pos);
+        }
+    }
+
+    debug("new connection successful\n");
 }
 
-static bool sockets_init ()
+void sockets_config_file (const char* file_path)
 {
-    /* Create the UNIX socket */
+    socket_file_path = file_path;
+}
 
+bool sockets_init ()
+{
     struct sockaddr_un UNIXaddr;
+
+    /* Allow tailserver be run without parameters */
+
+    if (socket_file_path == NULL) {
+        unix_sock = INVALID_SOCKET;
+        return true;
+    }
+
+    /* Create the UNIX socket */
 
     if (strlen(socket_file_path) > (sizeof(UNIXaddr.sun_path) - 1)) {
         fprintf(stderr, _("The socket file path is too long (> %u): %s"),
@@ -158,7 +287,7 @@ static bool sockets_init ()
         return false;
     }
     if ((unix_sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-        perror(_("Can't start server : UNIX Socket "));
+        perror(_("Can't start server : UNIX Socket ")); /* TODO: Doesn't this need to go to stderr? */
         return false;
     }
     bzero((char*) &UNIXaddr, sizeof(UNIXaddr));
@@ -166,28 +295,32 @@ static bool sockets_init ()
     strmov(UNIXaddr.sun_path, socket_file_path);
 
     /* TODO: Check if that path is a socket or unused... otherwise bail out and quit. */
+    /* UPDATE: Don't bail out! Instead of letting set params and group by options, allow creating file beforehand. Unlink at exit only if created. */
     unlink(socket_file_path);
 
-    arg = 1;
-    setsockopt(unix_sock, SOL_SOCKET, SO_REUSEADDR, (char*) &arg, sizeof(arg)); /* Future OSs are unknown and this doesn't hurt. */
+    {
+        int arg = 1;
+        setsockopt(unix_sock, SOL_SOCKET, SO_REUSEADDR, (char*) &arg, sizeof(arg)); /* Future OSs are unknown and this doesn't hurt. */
+    }
 
     umask(0); /* TODO: Both mysqld and postgre does this. Redis does not. Why? */
 
-    if (bind(unix_sock, reinterpret_cast<struct sockaddr *>(&UNIXaddr), sizeof(UNIXaddr)) < 0) {
+    if (bind(unix_sock, (struct sockaddr *)(&UNIXaddr), sizeof(UNIXaddr)) < 0) { /* TODO: Why casting magic? */
         printf(_("Can't start server : Bind on unix socket"));
         printf(_("Do you already have another server running on socket: %s ?"), socket_file_path);
-        close();
+        close(unix_sock);
         unix_sock = INVALID_SOCKET;
         return false;
     }
 
-    umask(((~my_umask) & 0666)); /* TODO: Why does postgre use 0777? Nginx uses 0666 too. Anyway, default to 0600 or so and allow to change using options. Group name param too. (User is useless because only root could change and root shouldn't launch tailable programs anyway) */
+    /* TODO: Isn't (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) nicer? */ 
+    umask(0660); /* TODO: Why does postgre use 0777? Nginx uses 0666 too. Anyway, allow to change using options. Group name param too. (User is useless because only root could change and root shouldn't launch tailable programs anyway) */
 #if defined(S_IFSOCK) && defined(SECURE_SOCKETS)
     (void) chmod(socket_file_path,S_IFSOCK); /* Fix solaris 2.6 bug */
 #endif
 
     if (listen(unix_sock, 65535) < 0) { /* backlog limiting is done with kernel parameters */
-        printf(_("listen() on Unix socket failed with error %d"), socket_errno);
+        printf(_("listen() on Unix socket failed with error %d"), errno);
         sockets_final();
         return false;
     }
@@ -200,13 +333,19 @@ static bool sockets_init ()
     return true;
 }
 
-static void sockets_final ()
+void sockets_final ()
 {
+    debug("sockets finalizing\n");
+
     if (unix_sock != INVALID_SOCKET) {
         shutdown(unix_sock, SHUT_RDWR);
         close(unix_sock);
         unlink(socket_file_path);
         unix_sock = INVALID_SOCKET;
+    }
+    
+    while (first_tailer) {
+        tailer_final(first_tailer);
     }
 }
 

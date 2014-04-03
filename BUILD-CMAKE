@@ -1,0 +1,90 @@
+How to Build "tailserver" with CMake
+
+WHAT YOU NEED
+---------------------------------------------------------------
+CMake version 2.6 or later installed on your system.
+
+HOW TO INSTALL:
+
+Linux distributions:
+shell> sudo apt-get install cmake
+
+The above works on do Debian/Ubuntu based distributions.On others, command 
+line needs to be modified to e.g "yum install" on Fedora or "zypper install" 
+on OpenSUSE.
+
+OpenSolaris:
+shell> pfexec pkgadd install SUNWcmake
+
+Mac OSX:
+Download and install the latest distribution from 
+http://www.cmake.org/cmake/resources/software.html
+Download the .dmg image and open it.
+
+Other Unixes:
+Precompiled packages for other Unix flavors (HPUX, AIX) are available from 
+http://www.cmake.org/cmake/resources/software.html 
+
+Alternatively, you can build from source, source package is also available on 
+CMake download page.
+
+
+Compiler Tools
+--------------
+You will need  a working compiler and make utility on your OS. 
+On Mac OSX, install Xcode tools.
+
+
+
+BUILD 
+---------------------------------------------------------------
+Ensure that compiler and cmake are in PATH.
+The following description assumes that current working directory 
+is the source directory. 
+
+
+- Generic build on Unix, using "Unix Makefiles" generator
+
+shell>cmake . 
+shell>make
+
+Note: by default, cmake build is less verbose than automake build. Use 
+"make VERBOSE=1" if you want to see add command lines for each compiled source.
+
+- Mac OSX build with Xcode
+shell>cmake . -G Xcode
+shell>xcodebuild -configuration Relwithdebinfo
+(alternatively, open tailserver.xcodeproj and build using the IDE)
+
+Command line build with CMake 2.8
+After creating project with cmake -G as above, issue
+cmake . --build 
+this works with any  CMake generator.
+
+For Xcode you might want to add an extra 
+configuration parameter, to avoid building all configurations.
+
+cmake . --build --config Relwithdebinfo
+
+
+Building "out-of-source"
+---------------------------------------------------------------
+Building out-of-source provides additional benefits. For example it allows to 
+build both Release and Debug configurations using the single source tree.Or 
+build the same source with different version of the same compiler or with 
+different compilers. Also you will prevent polluting the source tree with the
+objects and binaries produced during the make. 
+
+Here is an example on how to do it (generic Unix), assuming the source tree is
+in directory named src and the current working directory is source root.
+
+shell>mkdir ../build # build directory is called build
+shell>cd ../build
+shell>cmake ../src
+
+Note: if a directory was used for in-source build, out-of-source will 
+not work. To reenable out-of-source build, remove <source-root>/CMakeCache.txt
+file.
+
+
+

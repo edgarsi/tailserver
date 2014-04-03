@@ -1,0 +1,6 @@
+
+Change directory to where you found this file.
+
+sh ./configure
+make
+sudo make install

@@ -3,7 +3,7 @@
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, version 2 of the License.
+   the Free Software Foundation, version 2+ of the License.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,33 +24,34 @@
    
 */
 
-/*#include <config.h>
-#include <sys/types.h>
-#include <signal.h>
+#include "config.h"
+
+#include "buffer.h"
+#include "pipes.h"
+#include "sockets.h"
+
+#include <stdbool.h>
 #include <getopt.h>
-
-#include "system.h"
+#include <limits.h>
+#include <stdlib.h>
+#include "xstrtol.h"
 #include "error.h"
-#include "fadvise.h"
-#include "stdio--.h"
-#include "xfreopen.h"
-
-//#include <sys/select.h>
-#include <sys/socket.h>*/ 
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own socket event handling */
 #include <ev.h>
 
-#include "provider.h"
-#include "pipes.h"
-
 #define PROGRAM_NAME "tailserver"
+const char *program_name = PROGRAM_NAME;
+
+#include "system.h"
 
 static bool ignore_interrupts;
+static ev_signal sigint_watcher;
 
 /* TODO: Option to stall reading input until either a single connection or timeout occurs 
    -w, --wait[=T] postpone reading input until a connection occurs or timeout (in seconds), if specified
-   TODO: Option to choose either block or not block when some socket can't keep up. */
+   TODO: Option to choose either block or not block (dropping data seems stupid, closing connection OK) when some socket 
+   can't keep up.  .... third option - buffer all in memory (but position tracking complicates, is it worth it?)
 */
 static struct option const long_options[] =
 {
@@ -70,31 +71,36 @@ static void usage (int status)
     else {
         printf(_("Usage: %s [OPTION]... <SOCKET_FILE>\n"), program_name);
         printf(_("\
-Copy standard input to to standard output, and also serve it to UNIX domain socket connections.\n\
-Give new connections to SOCKET_FILE the last %d lines. Output new lines as they arrive at standard input.\n\
+Copy stdin to stdout, and also serve it to UNIX domain socket connections.\
+ Give new SOCKET_FILE connections the last %d lines arrived to stdin so far.\
+ Continue giving all new lines that arrive (just like 'tail -f' does).\n\
 \n"), DEFAULT_N_LINES);
         fputs(_("\
-   -c, --bytes=K             output the last K bytes\n\
+  -c, --bytes=K             output the last K bytes\n\
 "), stdout);
         printf(_("\
-   -n, --lines=K             output the last K lines, instead of the last %d;\n\
+  -n, --lines=K             output the last K lines, instead of the last %d;\n\
 "), DEFAULT_N_LINES);
         fputs(_("\
-   -i, --ignore-interrupts   ignore interrupt signals\n\
+  -i, --ignore-interrupts   ignore interrupt signals\n\
 "), stdout);
         fputs(HELP_OPTION_DESCRIPTION, stdout);
         fputs(VERSION_OPTION_DESCRIPTION, stdout);
+        fputs(_("\n\
+SOCKET_FILE will be rewritten if exists (in near future, this behaviour will change).\n"), stdout);
         fputs(_("\
 \n\
 K (the number of bytes or lines) may have a multiplier suffix:\n\
 b 512, kB 1000, K 1024, MB 1000*1000, M 1024*1024,\n\
 GB 1000*1000*1000, G 1024*1024*1024, and so on for T, P, E, Z, Y.\n\
-\n\
 "), stdout);
         emit_ancillary_info();
     }
     exit(status);
 }
+
+static void server_init ();
+static void server_final ();
 
 static void init_all ()
 {
@@ -117,14 +123,14 @@ static void final_all ()
     server_final();
 }
 
-static void libev_error_handler (const char *msg)
+static void libev_error_handler (const char* msg)
 {
     perror(msg);
     final_all();
     exit(EXIT_FAILURE);
 }
 
-static void sigint_cb (EV_P_ ev_signal *w, int revents)
+static void sigint_cb (EV_P_ ev_signal* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNUSED)
 {
     ev_break(EV_A_ EVBREAK_ALL);
 }
@@ -138,13 +144,15 @@ static void server_init ()
     ev_set_syserr_cb(libev_error_handler);
 
     /* Either ignore SIGINT or exit gracefully, depending on user's choice */
-    ev_signal signal_watcher;
     if (ignore_interrupts) {
         signal(SIGINT, SIG_IGN);
     } else {
-        ev_signal_init(&signal_watcher, sigint_cb, SIGINT);
-        ev_io_start(EV_DEFAULT_UC_ &signal_watcher);
+        ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
+        ev_signal_start(EV_DEFAULT_UC_ &sigint_watcher);
     }
+    
+    /* Always ignore SIGPIPE - why should we be bothered? */
+    signal(SIGPIPE, SIG_IGN);
 }
 
 static void server_run ()
@@ -157,16 +165,10 @@ static void server_final ()
     /* Nothing to do */
 }
 
-int main (int argc, char **argv)
+int main (int argc, char** argv)
 {
     bool ok;
     int optc;
-
-    initialize_main(&argc, &argv);
-    set_program_name(argv[0]);
-    setlocale(LC_ALL, "");
-    bindtextdomain(PACKAGE, LOCALEDIR);
-    textdomain(PACKAGE);
 
     atexit(close_stdout);
 
@@ -179,14 +181,14 @@ int main (int argc, char **argv)
         {
         case 'c':
         case 'n':
-            count_lines = (c == 'n');
+            count_lines = (optc == 'n');
 
             {
                 strtol_error s_err;
-                s_err = xstrtoumax(optarg, NULL, DEFAULT_N_LINES, n_units, "bkKmMGTPEZY0");
+                s_err = xstrtoumax(optarg, NULL, 10, &n_units, "bkKmMGTPEZY0");
                 if (s_err != LONGINT_OK) {
                     error(EXIT_FAILURE, 0, "%s: %s", optarg,
-                            (c == 'n' ?
+                            (optc == 'n' ?
                                     _("invalid number of lines") :
                                     _("invalid number of bytes")));
                 }
@@ -199,20 +201,37 @@ int main (int argc, char **argv)
 
         case_GETOPT_HELP_CHAR;
 
-        case_GETOPT_VERSION_CHAR(PROGRAM_NAME, "WWW");
+        case_GETOPT_VERSION_CHAR(PROGRAM_NAME " " VERSION, "<" PACKAGE_URL ">");
 
         default:
             usage(EXIT_FAILURE);
         }
     }
 
-    init_all();
-    buffer_config_count_lines(count_lines);
-    buffer_config_n_units(n_units);
+    {
+        const char* file_path;
+        if (argc - optind > 1) {
+            error(EXIT_FAILURE, 0, "%s", _("Multiple file paths given!"));
+        }
+        else
+        if (argc - optind == 1) {
+            file_path = argv[optind];
+        } else {
+            file_path = NULL;
+            fputs(_("File path not given - tailserver will act like 'cat' command. \
+Call with --help for options.\n"), stderr);
+        }
 
-    server_run();
+        buffer_config_count_lines(count_lines);
+        buffer_config_n_units(n_units);
+        sockets_config_file(file_path);
 
-    final_all();
+        init_all();
+
+        server_run();
+
+        final_all();
+    }
 
     exit(EXIT_SUCCESS);
 }
