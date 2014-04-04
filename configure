@@ -4,7 +4,7 @@
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; version 2
+# License as published by the Free Software Foundation; version 2+
 # of the License.
 #
 # This program is distributed in the hope that it will be useful,
@@ -28,7 +28,7 @@ else
   # Cygwin at some (default) configurations gives permissions 000 to files, cmake unable to handle.
   chmod -R u+r "$scriptdir"
   
-  rm Makefile
+  rm -f Makefile
   /bin/rm -rf build/CMakeCache.txt build/CMakeFiles/
   
   mkdir -p "$scriptdir/build"
