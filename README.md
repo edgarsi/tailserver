@@ -55,7 +55,7 @@ Dependencies: tailclient uses `socat`. *TODO: Make a version which doesn't use s
 ```
 git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
-sh ./configure
+sh configure
 make
 #sudo make install <- this is not tested and will probably not work. launch ./build/src/tailserver directly instead
 ```
