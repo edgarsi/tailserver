@@ -4,9 +4,9 @@
 .compiles
 .gpl2
 .publish
-manpage
+manpage ("man" written, "info" not yet)
 cleanup
 macros coreutils need
 testing
 in-code todos
-package
+package ("make dist" fixed)
