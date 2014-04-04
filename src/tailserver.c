@@ -71,10 +71,13 @@ static void usage (int status)
     else {
         printf(_("Usage: %s [OPTION]... <SOCKET_FILE>\n"), program_name);
         printf(_("\
-Copy stdin to stdout, and also serve it to UNIX domain socket connections.\
- Give new SOCKET_FILE connections the last %d lines arrived to stdin so far.\
- Continue giving all new lines that arrive (just like 'tail -f' does).\n\
-\n"), DEFAULT_N_LINES);
+Copy stdin to stdout, and also serve it to UNIX domain socket connections.\n\
+Give new SOCKET_FILE connections the last %d lines arrived to stdin so far.\n\
+Continue giving all new lines that arrive (just like 'tail -f' does).\n\
+"), DEFAULT_N_LINES);
+
+        emit_mandatory_arg_note ();
+
         fputs(_("\
   -c, --bytes=K             output the last K bytes\n\
 "), stdout);
@@ -87,7 +90,8 @@ Copy stdin to stdout, and also serve it to UNIX domain socket connections.\
         fputs(HELP_OPTION_DESCRIPTION, stdout);
         fputs(VERSION_OPTION_DESCRIPTION, stdout);
         fputs(_("\n\
-SOCKET_FILE will be rewritten if exists (in near future, this behaviour will change).\n"), stdout);
+SOCKET_FILE will be rewritten if exists (in near future, this behaviour \n\
+will change).\n"), stdout);
         fputs(_("\
 \n\
 K (the number of bytes or lines) may have a multiplier suffix:\n\
@@ -203,7 +207,7 @@ int main (int argc, char** argv)
 
         case_GETOPT_HELP_CHAR;
 
-        case_GETOPT_VERSION_CHAR(PROGRAM_NAME " " VERSION, "<" PACKAGE_URL ">");
+        case_GETOPT_VERSION_CHAR(NULL, "<" PACKAGE_URL ">");
 
         default:
             usage(EXIT_FAILURE);

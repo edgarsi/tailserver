@@ -151,7 +151,7 @@
 #define PACKAGE_BUGREPORT "<https://github.com/edgarsi/tailserver/issues>"
 #define PACKAGE_URL "https://github.com/edgarsi/tailserver"
 #define PACKAGE_NAME "tailserver"
-#define PACKAGE_STRING "tailserver @VERSION@"
+#define PACKAGE_STRING "tailserver"
 #define PACKAGE_TARNAME "tailserver"
 #define PACKAGE_VERSION "@VERSION@"
 #define VERSION "@VERSION@"
