@@ -15,7 +15,7 @@
 
 /* 
    Some code is borrowed from GNU coreutils tee.c and tail.c
-   (I used the GLP3+ code but I'm pretty sure it hasn't changed since the GPL2+ times)
+   (I used the GLP3+ code but I've checked it hasn't changed significantly since the GPL2+ times)
    tee.c: Mike Parker, Richard M. Stallman, and David MacKenzie
    tail.c: Paul Rubin, David MacKenzie, Ian Lance Taylor, Giuseppe Scrivano
    Socket handling from mysqld.cc (GPL2=)
