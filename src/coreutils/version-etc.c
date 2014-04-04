@@ -89,7 +89,7 @@ version_etc_arn (FILE *stream,
 
   fputs (_("\
 \n\
-License GPLv3+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\n\
+License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 \n\
@@ -251,12 +251,5 @@ emit_bug_reporting_address (void)
   printf (_("Report %s bugs to: %s\n"), PACKAGE_PACKAGER,
           PACKAGE_PACKAGER_BUG_REPORTS);
 #endif
-#ifdef PACKAGE_URL
-  printf (_("%s home page: <%s>\n"), PACKAGE_NAME, PACKAGE_URL);
-#else
-  printf (_("%s home page: <http://www.gnu.org/software/%s/>\n"),
-          PACKAGE_NAME, PACKAGE);
-#endif
-  fputs (_("General help using GNU software: <http://www.gnu.org/gethelp/>\n"),
-         stdout);
+  printf (_("Visit %s home page: <%s>\n"), PACKAGE_NAME, PACKAGE_URL);
 }
