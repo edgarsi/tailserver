@@ -24,7 +24,7 @@ TARGET_LINK_LIBRARIES(tailserver ev)
 INSTALL_TARGETS(tailserver DESTINATION ${INSTALL_BINDIR})
 
 FOREACH(tool glibtoolize libtoolize aclocal autoconf autoheader automake gtar 
- tar bzr)
+ tar git)
  STRING(TOUPPER ${tool}  TOOL)
  FIND_PROGRAM(${TOOL}_EXECUTABLE ${tool} DOC "path to the executable")
  MARK_AS_ADVANCED(${TOOL}_EXECUTABLE)
