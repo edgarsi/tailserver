@@ -1,6 +1,72 @@
 
-Change directory to where you found this file.
+Change directory to where you found this file. Usually the standard procedure 
+will suffice. Exceptions include Mac OSX build with Xcode, explained below. 
 
 sh ./configure
 make
 sudo make install
+
+
+A more detailed help follows.
+
+WHAT YOU NEED
+---------------------------------------------------------------
+CMake version 2.6 or later installed on your system.
+
+HOW TO INSTALL:
+
+Linux distributions:
+shell> sudo apt-get install cmake
+
+The above works on do Debian/Ubuntu based distributions.On others, command 
+line needs to be modified to e.g "yum install" on Fedora or "zypper install" 
+on OpenSUSE.
+
+OpenSolaris:
+shell> pfexec pkgadd install SUNWcmake
+
+Mac OSX:
+Download and install the latest distribution from 
+http://www.cmake.org/cmake/resources/software.html
+Download the .dmg image and open it.
+
+Other Unixes:
+Precompiled packages for other Unix flavors (HPUX, AIX) are available from 
+http://www.cmake.org/cmake/resources/software.html 
+
+Alternatively, you can build from source, source package is also available on 
+CMake download page.
+
+
+Compiler Tools
+--------------
+You will need  a working compiler and make utility on your OS. 
+On Mac OSX, install Xcode tools.
+
+
+
+BUILD 
+---------------------------------------------------------------
+Ensure that compiler and cmake are in PATH.
+The following description assumes that current working directory 
+is the source directory. 
+
+
+- Generic build on Unix, using "Unix Makefiles" generator
+
+shell>sh ./configure
+shell>make
+
+- Mac OSX build with Xcode
+shell>cd build/
+shell>cmake .. -G Xcode
+shell>xcodebuild -configuration Relwithdebinfo
+(alternatively, open tailserver.xcodeproj and build using the IDE)
+
+Command line build with CMake 2.8
+After creating project with cmake -G as above, issue
+cmake .. --build 
+this works with any  CMake generator.
+^ I doubt it works at all.
+
+
