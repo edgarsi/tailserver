@@ -20,3 +20,4 @@
 # Eclipse project file
 /.project
 /build
+/Makefile
