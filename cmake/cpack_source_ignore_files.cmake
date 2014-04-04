@@ -14,11 +14,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA 
 
 SET(CPACK_SOURCE_IGNORE_FILES
-\\\\.bzr/
-\\\\.bzr-tailserver
-\\\\.bzrignore
-\\\\.bzrfileids
+\\\\.git/
+\\\\.git-tailserver
+\\\\.gitignore
+\\\\.gitfileids
 \\\\.reviewboardrc
+\\\\.project
 CMakeCache\\\\.txt
 cmake_dist\\\\.cmake
 CPackSourceConfig\\\\.cmake
@@ -38,5 +39,6 @@ include/config\\\\.h$
 include/my_config\\\\.h$
 /autom4te\\\\.cache/
 errmsg\\\\.sys$
+/build/
 #
 )

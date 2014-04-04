@@ -14,7 +14,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA 
 
 # Make source distribution
-# If bzr is present, run bzr export.
+# If bzr is present, run bzr export. TODO: Should use git commands where possible.
 # Otherwise, just run cpack with source configuration.
 
 SET(CMAKE_SOURCE_DIR "@CMAKE_SOURCE_DIR@")
@@ -77,8 +77,9 @@ ENDIF()
 IF(NOT BZR_EXECUTABLE)
   MESSAGE(STATUS "bzr not found or source dir is not a repo, use CPack")
   
-  IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-    # In-source build is the worst option, we have to cleanup source tree.
+  #IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+  IF(1) # Always cleanup because binary dir might be below source.
+    # This project is small, so cleanup cost is negligible.
 
     IF(CMAKE_GENERATOR MATCHES "Makefiles")
     # make clean
@@ -104,24 +105,14 @@ IF(NOT BZR_EXECUTABLE)
   )
 ENDIF()
 
-# Copy spec files
-CONFIGURE_FILE(${CMAKE_BINARY_DIR}/support-files/tailserver-${VERSION}.spec
-   ${PACKAGE_DIR}/support-files/tailserver-${VERSION}.spec COPYONLY)
-
 # Copy README file
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/README
-   ${PACKAGE_DIR}/README COPYONLY)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/README.md
+   ${PACKAGE_DIR}/README.md COPYONLY)
 
 # Add documentation, if user has specified where to find them
 IF(DOCS_LOCATION)
   MESSAGE("Copying documentation files from " ${DOCS_LOCATION})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory "${DOCS_LOCATION}" "${PACKAGE_DIR}")
-ENDIF()
-
-# Ensure there is an "INFO_SRC" file.
-INCLUDE(${CMAKE_BINARY_DIR}/info_macros.cmake)
-IF(NOT EXISTS ${PACKAGE_DIR}/Docs/INFO_SRC)
-  CREATE_INFO_SRC(${PACKAGE_DIR}/Docs)
 ENDIF()
 
 # In case we used CPack, it could have copied some
