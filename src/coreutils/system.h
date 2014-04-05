@@ -143,8 +143,8 @@ emit_ancillary_info (void)
   printf (_("\nReport %s bugs to %s\n"), program_name,
           PACKAGE_BUGREPORT);
   printf (_("Visit %s home page: <%s>\n"), PACKAGE_NAME, PACKAGE_URL);
-  printf (_("For complete documentation, run: "
-            "info %s\n"), program_name);
+  /*printf (_("For complete documentation, run: "
+            "info %s\n"), program_name);*/
 }
 
 static inline void
