@@ -62,7 +62,7 @@ static void stdout_write_blocking (char* buf, ssize_t size)
 
     do {
         n = write(STDOUT_FILENO, buf, size);
-    } while (n < 0 && errno == EINTR);
+    } while (n < 0 && errno == EINTR); /*TODO: Where's my EAGAIN? */
 
     if (n < size) {
         perror(_("Writing to stdout encountered an error"));

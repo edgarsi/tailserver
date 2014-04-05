@@ -89,7 +89,7 @@ static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t
 
     do {
         n = write(tailer->socket, buf, size);
-    } while (n < 0 && errno == EINTR);
+    } while (n < 0 && errno == EINTR); /*TODO: Where's my EAGAIN? */
 
     if (n < size) {
         perror(_("Writing to client encountered an error"));
