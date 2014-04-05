@@ -2,7 +2,7 @@
 somewhere must be tools to test on vast amount of platforms automatically.
 test with 65535 and more clients sending SYN without a followup
 test with a socket file path ""
-
+test with a slow reader (should block stdin of tailserver), slow stdout too why not
 
 
 
