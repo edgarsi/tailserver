@@ -4,9 +4,10 @@
 .compiles
 .gpl2
 .publish
-manpage ("man" written, "info" not yet)
+.manpage
 cleanup
 macros coreutils need
+portability
 testing
 in-code todos
 package ("make dist" fixed)
