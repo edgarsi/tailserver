@@ -19,5 +19,7 @@
 
 # Eclipse project file
 /.project
+
+# Files generated during build
 /build
 /Makefile
