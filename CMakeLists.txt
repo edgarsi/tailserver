@@ -127,7 +127,7 @@ ENDIF()
 
 
 # Run platform tests
-INCLUDE(configure.cmake)
+INCLUDE(cmake/configure.cmake)
 
 # Common defines and includes
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
@@ -140,7 +140,7 @@ ADD_SUBDIRECTORY(docs)
 
 
 
-CONFIGURE_FILE(config.h.cmake   ${CMAKE_BINARY_DIR}/include/config.h)
+CONFIGURE_FILE(cmake/config.h.cmake   ${CMAKE_BINARY_DIR}/include/config.h)
 
 # Packaging
 SET(CPACK_GENERATOR "TGZ")
