@@ -37,7 +37,7 @@ git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
 sh configure
 make
-#sudo make install <- this is not tested and will probably not work. launch ./build/src/tailserver directly instead
+sudo make install
 ```
 
 ### Advanced example 
