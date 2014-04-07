@@ -12,7 +12,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 PROJECT("tailserver")
 
-set(CMAKE_VERBOSE_MAKEFILE on)
+SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Include the platform-specific file. To allow exceptions, this code
 # looks for files in order of how specific they are. If there is, for
@@ -149,6 +149,24 @@ SET(CPACK_GENERATOR "TGZ")
 # (see http://public.kitware.com/Bug/view.php?id=11452)
 SET(CPACK_MONOLITHIC_INSTALL 1 CACHE INTERNAL "")
 
+#
+# RPM installs documentation directly from the source tree
+#
+IF(NOT INSTALL_LAYOUT MATCHES "RPM")
+  INSTALL(FILES COPYING LICENSE 
+    DESTINATION ${INSTALL_DOCREADMEDIR} 
+    COMPONENT Readme
+    OPTIONAL
+  )
+  IF(UNIX)
+    INSTALL(FILES INSTALL.UNIX
+      DESTINATION ${INSTALL_DOCREADMEDIR}
+      COMPONENT Readme
+      RENAME INSTALL
+    )
+  ENDIF()
+ENDIF()
+
 INCLUDE(CPack)
 
 
@@ -157,11 +175,12 @@ INCLUDE(CPack)
 IF (NOT EXISTS ${CMAKE_SOURCE_DIR}/Makefile) 
   FILE(WRITE ${CMAKE_SOURCE_DIR}/Makefile "
 .DEFAULT_GOAL := all
-clean:
+clean :
 	[ -f build/CMakeFiles/Makefile2 ] && cd build/ && make clean || true
 	/bin/rm -rf build/CMakeCache.txt build/CMakeFiles/
-%:
+	/bin/rm -f install
+% :
 	cd build/ && make $@
-  ")
+")
 ENDIF()
 

@@ -5,6 +5,7 @@
 .gpl2
 .publish
 .manpage
+.make install
 cleanup
 macros coreutils need
 portability

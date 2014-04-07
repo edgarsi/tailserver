@@ -18,7 +18,7 @@
 # The current choices of installation layout are:
 #
 #  STANDALONE
-#    Build with prefix=/usr/local/tailserver, create tarball with install prefix="."
+#    Build with prefix=/usr, create tarball with install prefix="."
 #    and relative links.  Windows zip uses the same tarball layout but without
 #    the build prefix.
 #
@@ -37,11 +37,8 @@
 # Several variables can be overwritten:
 #
 # - INSTALL_BINDIR          (directory with tailserver)
-#
-# - INSTALL_DOCDIR          (documentation)
 # - INSTALL_DOCREADMEDIR    (readme and similar)
 # - INSTALL_MANDIR          (man pages)
-# - INSTALL_INFODIR         (info pages)
 #
 
 IF(NOT INSTALL_LAYOUT)
@@ -52,17 +49,7 @@ SET(INSTALL_LAYOUT "${DEFAULT_INSTALL_LAYOUT}"
 CACHE STRING "Installation directory layout. Options are: STANDALONE (as in zip or tar.gz installer), RPM, DEB, SVR4")
 
 IF(UNIX)
-  IF(INSTALL_LAYOUT MATCHES "RPM")
-    SET(default_prefix "/usr")
-  ELSEIF(INSTALL_LAYOUT MATCHES "DEB")
-    SET(default_prefix "/opt/tailserver-${BASE_VERSION}")
-    # This is required to avoid "cpack -GDEB" default of prefix=/usr
-    SET(CPACK_SET_DESTDIR ON)
-  ELSEIF(INSTALL_LAYOUT MATCHES "SVR4")
-    SET(default_prefix "/opt/tailserver")
-  ELSE()
-    SET(default_prefix "/usr/local/tailserver")
-  ENDIF()
+  SET(default_prefix "/usr")
   IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     SET(CMAKE_INSTALL_PREFIX ${default_prefix}
       CACHE PATH "install prefix" FORCE)
@@ -79,41 +66,29 @@ ENDIF()
 # STANDALONE layout
 #
 SET(INSTALL_BINDIR_STANDALONE           "bin")
-#
-SET(INSTALL_DOCDIR_STANDALONE           "docs")
-SET(INSTALL_DOCREADMEDIR_STANDALONE     ".")
-SET(INSTALL_MANDIR_STANDALONE           "man")
-SET(INSTALL_INFODIR_STANDALONE          "docs")
+SET(INSTALL_DOCREADMEDIR_STANDALONE     "share/doc/tailserver")
+SET(INSTALL_MANDIR_STANDALONE           "share/man")
 
 #
 # RPM layout
 #
 SET(INSTALL_BINDIR_RPM                  "bin")
-#
-#SET(INSTALL_DOCDIR_RPM                 unset - installed directly by RPM)
 #SET(INSTALL_DOCREADMEDIR_RPM           unset - installed directly by RPM)
-SET(INSTALL_INFODIR_RPM                 "share/info")
 SET(INSTALL_MANDIR_RPM                  "share/man")
 
 #
 # DEB layout
 #
 SET(INSTALL_BINDIR_DEB                  "bin")
-#
-SET(INSTALL_DOCDIR_DEB                  "docs")
-SET(INSTALL_DOCREADMEDIR_DEB            ".")
-SET(INSTALL_MANDIR_DEB                  "man")
-SET(INSTALL_INFODIR_DEB                 "docs")
+SET(INSTALL_DOCREADMEDIR_DEB            "share/doc/tailserver")
+SET(INSTALL_MANDIR_DEB                  "share/man")
 
 #
 # SVR4 layout
 #
 SET(INSTALL_BINDIR_SVR4                 "bin")
-#
-SET(INSTALL_DOCDIR_SVR4                 "docs")
-SET(INSTALL_DOCREADMEDIR_SVR4           ".")
-SET(INSTALL_MANDIR_SVR4                 "man")
-SET(INSTALL_INFODIR_SVR4                "docs")
+SET(INSTALL_DOCREADMEDIR_SVR4           "share/doc/tailserver")
+SET(INSTALL_MANDIR_SVR4                 "share/man")
 
 
 # Clear cached variables if install layout was changed
