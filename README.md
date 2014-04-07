@@ -77,7 +77,7 @@ Look at how pretty it is!
 	there's a kernel module for a block device which does this... its name forgotten.
 
 * *If you need to start `tail -f` on a program which is already running*,  
-	you can use [docs/capture_output.sh](capture_output.sh) which isn't perfect but fair enough for the simplest uses.
+	you can use [capture_output.sh](capture_output.sh) which isn't perfect but fair enough for the simplest uses.
 	There are slightly riskier but less costly alternatives, such as redirecting the stdout using gdb - google knows of them.
 
 * *If you always follow your output _immediately_ with `tail -f`*,  
