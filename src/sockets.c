@@ -36,9 +36,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#ifdef HAVE_FCNTL_NONBLOCK
-#include <fcntl.h>
-#endif
+#include "fcntl_wrap.h"
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own event handling */
 #include <ev.h>

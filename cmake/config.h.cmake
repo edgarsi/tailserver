@@ -105,12 +105,7 @@
 
 
 #cmakedefine HAVE_FCNTL_NONBLOCK 1
-
-/* If a system has neither O_NONBLOCK nor NDELAY, upgrade is recommended :P */
-/* Not having fcntl() is too archaic as well. */
-#ifndef O_NONBLOCK
-#define O_NONBLOCK O_NDELAY
-#endif
+#cmakedefine HAVE_FCNTL_NDELAY 1
 
 #cmakedefine HAVE_SSIZE_T 1
 #if !defined(HAVE_SSIZE_T) && !defined(ssize_t)
