@@ -6,9 +6,11 @@
 .publish
 .manpage
 .make install
-cleanup
-macros coreutils need
-portability
+.cleanup
+.macros coreutils need
+.portability
 testing
+socat-based tailclient
+release 1.0 as alpha
 in-code todos
 package ("make dist" fixed)

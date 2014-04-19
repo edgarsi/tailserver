@@ -18,15 +18,25 @@
 
 /* Headers we may want to use. */
 #cmakedefine HAVE_FCNTL_H 1
+#cmakedefine HAVE_MEMORY_H 1
+#cmakedefine HAVE_STDIO_EXT_H 1
+#cmakedefine HAVE_STRING_H 1
+#cmakedefine HAVE_STRINGS_H 1
 #cmakedefine HAVE_SYS_UN_H 1
-
-/* Libraries */
-#cmakedefine HAVE_LIBSOCKET 1
+#cmakedefine HAVE_UNISTD_H 1
 
 /* Functions we may want to use. */
+#cmakedefine HAVE_BZERO 1
 #cmakedefine HAVE_MEMCPY 1
 #cmakedefine HAVE_MEMMOVE 1
 #cmakedefine HAVE_POSIX_FADVISE 1
+#cmakedefine HAVE_FCNTL 1
+#cmakedefine HAVE_DECL___FPENDING 1
+#cmakedefine HAVE_DECL_FERROR_UNLOCKED 1
+#cmakedefine HAVE_DECL_FFLUSH_UNLOCKED 1
+#cmakedefine HAVE_DECL_PUTC_UNLOCKED 1
+
+#define USE_UNLOCKED_IO 1
 
 /* Types we may use */
 #ifdef __APPLE__
@@ -60,37 +70,29 @@
 #define HAVE_INT 1
 #cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
 #cmakedefine HAVE_LONG_LONG 1
+#ifdef HAVE_LONG_LONG
+#define HAVE_LONG_LONG_INT 1
+#endif
 #cmakedefine SIZEOF_OFF_T @SIZEOF_OFF_T@
 #cmakedefine HAVE_OFF_T 1
 #cmakedefine SIZEOF_SIGSET_T @SIZEOF_SIGSET_T@
 #cmakedefine HAVE_SIGSET_T 1
 #cmakedefine HAVE_SIZE_T 1
-#cmakedefine SIZEOF_UCHAR @SIZEOF_UCHAR@
-#cmakedefine HAVE_UCHAR 1
-#cmakedefine SIZEOF_UINT @SIZEOF_UINT@
-#cmakedefine HAVE_UINT 1
-#cmakedefine SIZEOF_ULONG @SIZEOF_ULONG@
-#cmakedefine HAVE_ULONG 1
-#cmakedefine SIZEOF_INT8 @SIZEOF_INT8@
-#cmakedefine HAVE_INT8 1
-#cmakedefine SIZEOF_UINT8 @SIZEOF_UINT8@
-#cmakedefine HAVE_UINT8 1
-#cmakedefine SIZEOF_INT16 @SIZEOF_INT16@
-#cmakedefine HAVE_INT16 1
-#cmakedefine SIZEOF_UINT16 @SIZEOF_UINT16@
-#cmakedefine HAVE_UINT16 1
-#cmakedefine SIZEOF_INT32 @SIZEOF_INT32@
-#cmakedefine HAVE_INT32 1
-#cmakedefine SIZEOF_UINT32 @SIZEOF_UINT32@
-#cmakedefine HAVE_UINT32 1
-#cmakedefine SIZEOF_U_INT32_T @SIZEOF_U_INT32_T@
-#cmakedefine HAVE_U_INT32_T 1
-#cmakedefine SIZEOF_INT64 @SIZEOF_INT64@
-#cmakedefine HAVE_INT64 1
-#cmakedefine SIZEOF_UINT64 @SIZEOF_UINT64@
-#cmakedefine HAVE_UINT64 1
 #cmakedefine SIZEOF_BOOL @SIZEOF_BOOL@
 #cmakedefine HAVE_BOOL 1
+
+#cmakedefine HAVE_INTTYPES_H_WITH_UINTMAX 1
+#cmakedefine HAVE_STDINT_H_WITH_UINTMAX 1
+
+#cmakedefine HAVE_FCNTL_NONBLOCK 1
+#cmakedefine HAVE_FCNTL_NDELAY 1
+
+#cmakedefine HAVE_SSIZE_T 1
+#if !defined(HAVE_SSIZE_T) && !defined(ssize_t)
+#define ssize_t int
+#define HAVE_SSIZE_T 1
+#define SSIZE_T_SIZE INT_SIZE
+#endif
 
 #cmakedefine SOCKET_SIZE_TYPE @SOCKET_SIZE_TYPE@
 
@@ -103,16 +105,6 @@
 #endif
 #endif
 
-
-#cmakedefine HAVE_FCNTL_NONBLOCK 1
-#cmakedefine HAVE_FCNTL_NDELAY 1
-
-#cmakedefine HAVE_SSIZE_T 1
-#if !defined(HAVE_SSIZE_T) && !defined(ssize_t)
-#define ssize_t int
-#define HAVE_SSIZE_T 1
-#define SSIZE_T_SIZE INT_SIZE
-#endif
 
 /* Not using threads allows me not to have strerror_r */
 #cmakedefine HAVE_STRERROR_R 1
@@ -127,8 +119,15 @@
 /* I'm not interested in any translations. Only using the _() wrappers for practice of style. */
 #define _(msgid) (msgid)
 
-
 #define PENDING_OUTPUT_N_BYTES "@PENDING_OUTPUT_N_BYTES"
+
+/* I don't really need safe reopen as long as long as only stdin is ever reopened.
+TODO: Remove safe_reopen completely in future. I'm not doing it now because reinserting it, if needed, will take more
+time than leaving it in.
+#ifdef HAVE_FCNTL_H
+#define GNULIB_FREOPEN_SAFER 1
+#endif
+*/
 
 #define SYSTEM_TYPE "@SYSTEM_TYPE@"
 #define MACHINE_TYPE "@CMAKE_SYSTEM_PROCESSOR@"

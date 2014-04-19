@@ -10,14 +10,18 @@ SET(SOURCES
 	coreutils/version-etc.c
 	coreutils/xfreopen.c
 	coreutils/xstrtoumax.c
+	portability/safe_write.c
+	portability/strmov.c
 	buffer.c
 	pipes.c
 	sockets.c
-	strmov.c
 	tailserver.c
 )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/coreutils)
+INCLUDE_DIRECTORIES(
+	${CMAKE_CURRENT_SOURCE_DIR}/coreutils
+	${CMAKE_CURRENT_SOURCE_DIR}/portability
+)
 
 ADD_EXECUTABLE(tailserver ${SOURCES})
 TARGET_LINK_LIBRARIES(tailserver ev)

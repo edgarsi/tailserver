@@ -26,7 +26,7 @@
 # define STRTOL_T_MAXIMUM LONG_MAX
 #endif
 
-#include <config.h>
+#include "config.h"
 
 #include "xstrtol.h"
 

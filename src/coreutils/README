@@ -1,5 +1,5 @@
 Although I've taken these files from GNU Coreutils, I've kept my rights to modify them at will, 
-to simplify the interdepencency mess that Coreutils is.
+to simplify the interdepencency mess that Coreutils is and avoid maintenance of unused code.
 
 What is being used is compatible with the versions that existed before 2007-07-10, with but trivial
 changes from the later commits.

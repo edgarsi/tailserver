@@ -28,15 +28,23 @@
 
 #include "sockets.h"
 #include "buffer.h"
-#include "strmov.h"
 
 #include <sys/stat.h>
+/* Some Posix-wannabe systems define _S_IF* macros instead of S_IF*, but
+   do not provide the S_IS* macros that Posix requires. */
+#if defined (_S_IFSOCK) && !defined (S_IFSOCK)
+#define S_IFSOCK _S_IFSOCK
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 
 #include "fcntl_wrap.h"
+#include "bzero.h"
+#include "offsetof.h"
+#include "strmov.h"
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own event handling */
 #include <ev.h>
@@ -85,14 +93,34 @@ static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t
 {
     ssize_t n;
 
-    do {
-        n = write(tailer->socket, buf, size);
-    } while (n < 0 && errno == EINTR); /*TODO: Where's my EAGAIN? */
+    n = safe_write(tailer->socket, buf, size);
 
     if (n < size) {
         perror(_("Writing to client encountered an error"));
     }
     return n;
+}
+
+static void tailer_send_buffered_tail (tailer_t* tailer)
+{
+    const char* pos = buffer_get_tail_chunk();
+    size_t offset = buffer_get_tail_offset();
+    size_t chunk_size = buffer_chunk_size(pos);
+
+    while (chunk_size > 0) {
+        
+        ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
+        
+        if (size_written < (ssize_t)(chunk_size - offset)) {
+            debug("written too little\n");
+            tailer_final(tailer);
+            break;
+        }
+        debug("looking for the next chunk\n");
+        pos = buffer_advance_chunk(pos);
+        offset = 0;
+        chunk_size = buffer_chunk_size(pos);
+    }
 }
 
 void sockets_write_blocking (char* buf, ssize_t size)
@@ -117,10 +145,11 @@ void sockets_write_blocking (char* buf, ssize_t size)
 static void tailer_readable_cb (EV_P_ ev_io* w, int revents)
 {
     tailer_t* tailer = (tailer_t*)((char*)w - offsetof(tailer_t, readable_watcher));
-
     bool error = false;
     char buf[1024];
+
     ssize_t res = read(tailer->socket, buf, sizeof(buf));
+
     if (res > 0) {
         /* Client has sent something. Ignoring seems nicer than killing the connection. Undocumented. */
     } else
@@ -160,7 +189,7 @@ void tailer_final (tailer_t* tailer)
 {
     ev_io_stop(EV_DEFAULT_UC_ &tailer->readable_watcher);
     shutdown(tailer->socket, SHUT_RDWR);
-    close(tailer->socket); /* TODO: I think the code would be easier to read if local tailer_t instances were called "t", not "tailer" */
+    close(tailer->socket);
 
     if (tailer->prev) {
         tailer->prev->next = tailer->next;
@@ -203,7 +232,10 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         }
 #endif
     }
+#ifdef HAVE_FCNTL
+    /* TODO: Is there a good reason why listener's flags are set to accepted sockets or just performance I don't need? */
     fcntl(unix_sock, F_SETFL, socket_flags);
+#endif
     if (new_sock == INVALID_SOCKET) {
         if ((accept_error_count++ & 255) == 0) { /* This can happen often */
             perror(_("Error in accept"));
@@ -234,28 +266,12 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
     debug("creating client\n");
 
     {
-        /* Add the new connection */
+        /* Add the new connection, send it the tail */
 
         tailer_t* tailer = tailer_init(new_sock);
 
-        /* Send the tail */
+        tailer_send_buffered_tail(tailer);
 
-        const char* pos = buffer_get_tail_chunk();
-        size_t offset = buffer_get_tail_offset();
-        size_t chunk_size = buffer_chunk_size(pos);
-
-        while (chunk_size > 0) {
-            ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
-            if (size_written < (ssize_t)(chunk_size - offset)) {
-                debug("written too little\n");
-                tailer_final(tailer);
-                break;
-            }
-            debug("looking for the next chunk\n");
-            pos = buffer_advance_chunk(pos);
-            offset = 0;
-            chunk_size = buffer_chunk_size(pos);
-        }
     }
 
     debug("new connection successful\n");
@@ -298,7 +314,8 @@ bool sockets_init ()
 
     {
         int arg = 1;
-        setsockopt(unix_sock, SOL_SOCKET, SO_REUSEADDR, (char*) &arg, sizeof(arg)); /* Future OSs are unknown and this doesn't hurt. */
+        setsockopt(unix_sock, SOL_SOCKET, SO_REUSEADDR, (char*) &arg, sizeof(arg));
+        /* Future OSs are unknown and this doesn't hurt. */
     }
 
     umask(0); /* TODO: Both mysqld and postgre does this. Redis does not. Why? */
@@ -311,7 +328,8 @@ bool sockets_init ()
         return false;
     }
 
-    /* TODO: Isn't (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) nicer? */ 
+    /* TODO: Isn't (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) nicer? 
+     * UPDATE: Maybe, but then you need to copy posixstat.h because of the problems described in it. */ 
     umask(0660); /* TODO: Why does postgre use 0777? Nginx uses 0666 too. Anyway, allow to change using options. Group name param too. (User is useless because only root could change and root shouldn't launch tailable programs anyway) */
 #if defined(S_IFSOCK) && defined(SECURE_SOCKETS)
     (void) chmod(socket_file_path,S_IFSOCK); /* Fix solaris 2.6 bug */
@@ -323,7 +341,9 @@ bool sockets_init ()
         return false;
     }
 
+#ifdef HAVE_FCNTL
     socket_flags = fcntl(unix_sock, F_GETFL, 0);
+#endif
 
     ev_io_init(&unix_sock_watcher, unix_sock_cb, unix_sock, EV_READ);
     ev_io_start (EV_DEFAULT_UC_ &unix_sock_watcher);
@@ -341,7 +361,7 @@ void sockets_final ()
         unlink(socket_file_path);
         unix_sock = INVALID_SOCKET;
     }
-    
+
     while (first_tailer) {
         tailer_final(first_tailer);
     }

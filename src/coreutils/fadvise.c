@@ -14,11 +14,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include <config.h>
 #include "fadvise.h"
-
-#include <stdio.h>
-#include <fcntl.h>
 
 void
 fdadvise (int fd, off_t offset, off_t len, fadvice_t advice)

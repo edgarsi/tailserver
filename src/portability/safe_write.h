@@ -1,11 +1,9 @@
-/* Like stdio.h, but redefine some names to avoid glitches.
-
-   Copyright (C) 2005-2006, 2009-2013 Free Software Foundation, Inc.
+/* 
+   Copyright (C) 1985-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   the Free Software Foundation, version 2+ of the License.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,14 +13,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-/* Written by Paul Eggert.  */
+#include <unistd.h>
+#include <stddef.h>
 
-#include "config.h"
-
-#include <stdio.h>
-#include "stdio-safer.h"
-
-#if GNULIB_FREOPEN_SAFER
-# undef freopen
-# define freopen freopen_safer
-#endif
+ssize_t safe_write (int fd, const char* buf, ssize_t size);

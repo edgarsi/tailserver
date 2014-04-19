@@ -17,9 +17,7 @@
 
 /* Written by David MacKenzie <djm@gnu.ai.mit.edu>.  */
 
-#if !_LIBC
-# include "config.h"
-#endif
+#include "config.h"
 
 #include "error.h"
 
@@ -27,11 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if !_LIBC && ENABLE_NLS
-# include "gettext.h"
-# define _(msgid) gettext (msgid)
-#endif
 
 #ifdef _LIBC
 # include <libintl.h>
@@ -48,11 +41,6 @@
 #ifndef _
 # define _(String) String
 #endif
-
-/* If NULL, error will flush stdout, then print on stderr the program
-   name, a colon and a space.  Otherwise, error will call this
-   function without parameters instead.  */
-void (*error_print_progname) (void);
 
 /* This variable is incremented each time 'error' is called.  */
 unsigned int error_message_count;
@@ -85,19 +73,16 @@ extern void __error_at_line (int status, int errnum, const char *file_name,
 
 #else /* not _LIBC */
 
-# include <fcntl.h>
-# include <unistd.h>
-
-# if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-/* Get declarations of the native Windows API functions.  */
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-/* Get _get_osfhandle.  */
-#  include "msvc-nothrow.h"
+# ifdef HAVE_FCNTL_H
+#  include <fcntl.h>
+/* The gnulib override of fcntl is not needed in this file.  */
+#  undef fcntl
 # endif
 
-/* The gnulib override of fcntl is not needed in this file.  */
-# undef fcntl
+# ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+# endif
+
 
 # if !HAVE_DECL_STRERROR_R
 #  ifndef HAVE_DECL_STRERROR_R
@@ -119,23 +104,15 @@ extern char *program_name;
 # endif /* HAVE_STRERROR_R || defined strerror_r */
 #endif  /* not _LIBC */
 
-#if !_LIBC
+#if !_LIBC && HAVE_FCNTL
 /* Return non-zero if FD is open.  */
 static int
 is_open (int fd)
 {
-# if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-  /* On native Windows: The initial state of unassigned standard file
-     descriptors is that they are open but point to an INVALID_HANDLE_VALUE.
-     There is no fcntl, and the gnulib replacement fcntl does not support
-     F_GETFL.  */
-  return (HANDLE) _get_osfhandle (fd) != INVALID_HANDLE_VALUE;
-# else
 #  ifndef F_GETFL
-#   error Please port fcntl to your platform
+#   error Please port F_GETFL to your platform
 #  endif
   return 0 <= fcntl (fd, F_GETFL);
-# endif
 }
 #endif
 
@@ -143,25 +120,30 @@ static void
 flush_stdout (void)
 {
 #if !_LIBC
+# if HAVE_FCNTL
   int stdout_fd;
 
-# if GNULIB_FREOPEN_SAFER
+#  if GNULIB_FREOPEN_SAFER
   /* Use of gnulib's freopen-safer module normally ensures that
        fileno (stdout) == 1
      whenever stdout is open.  */
   stdout_fd = STDOUT_FILENO;
-# else
+#  else
   /* POSIX states that fileno (stdout) after fclose is unspecified.  But in
      practice it is not a problem, because stdout is statically allocated and
      the fd of a FILE stream is stored as a field in its allocated memory.  */
   stdout_fd = fileno (stdout);
-# endif
+#  endif
   /* POSIX states that fflush (stdout) after fclose is unspecified; it
      is safe in glibc, but not on all other platforms.  fflush (NULL)
      is always defined, but too draconian.  */
   if (0 <= stdout_fd && is_open (stdout_fd))
-#endif
+# endif
     fflush (stdout);
+#else
+  /* The only choice if the platform doesn't have fcntl */
+  fflush (NULL);
+#endif
 }
 
 static void
@@ -303,16 +285,12 @@ error (int status, int errnum, const char *message, ...)
 #ifdef _LIBC
   _IO_flockfile (stderr);
 #endif
-  if (error_print_progname)
-    (*error_print_progname) ();
-  else
-    {
+  
 #if _LIBC
-      __fxprintf (NULL, "%s: ", program_name);
+  __fxprintf (NULL, "%s: ", program_name);
 #else
-      fprintf (stderr, "%s: ", program_name);
+  fprintf (stderr, "%s: ", program_name);
 #endif
-    }
 
   va_start (args, message);
   error_tail (status, errnum, message, args);
@@ -362,16 +340,12 @@ error_at_line (int status, int errnum, const char *file_name,
 #ifdef _LIBC
   _IO_flockfile (stderr);
 #endif
-  if (error_print_progname)
-    (*error_print_progname) ();
-  else
-    {
+  
 #if _LIBC
-      __fxprintf (NULL, "%s:", program_name);
+  __fxprintf (NULL, "%s:", program_name);
 #else
-      fprintf (stderr, "%s:", program_name);
+  fprintf (stderr, "%s:", program_name);
 #endif
-    }
 
 #if _LIBC
   __fxprintf (NULL, file_name != NULL ? "%s:%d: " : " ",
