@@ -25,14 +25,21 @@
 */
 
 #include "buffer.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 
+#include "intmax.h"
+#include "memcpy.h"
+#include "offsetof.h"
+
+
 #define debug(...)
-//#define debug(x) fputs(x, stderr)
-#define fprintf(...)
+/*#define debug(x) fputs(x, stderr)*/
+#define fdebugf(...)
+/*#define fdebugf fprintf*/
 
 
 /* Number of items to tail. */
@@ -108,13 +115,13 @@ static void keep_track_of_tail_lines (uintmax_t n_lines)
 static void keep_track_of_tail_bytes (uintmax_t n_bytes)
 {
     /* First, skip over unneeded buffers.  */
-    fprintf(stderr, "%d - %d - %d > %d\n", total_bytes, bytes_up_to_tail_buffer, tail_buffer->nbytes, n_bytes);
+    fdebugf(stderr, "%d - %d - %d > %d\n", total_bytes, bytes_up_to_tail_buffer, tail_buffer->nbytes, n_bytes);
     while (total_bytes - bytes_up_to_tail_buffer - tail_buffer->nbytes > n_bytes) {
         bytes_up_to_tail_buffer += tail_buffer->nbytes;
         tail_buffer = tail_buffer->next;
-        fprintf(stderr, "%d - %d - %d > %d\n", total_bytes, bytes_up_to_tail_buffer, tail_buffer->nbytes, n_bytes);
+        fdebugf(stderr, "%d - %d - %d > %d\n", total_bytes, bytes_up_to_tail_buffer, tail_buffer->nbytes, n_bytes);
     }
-    fprintf(stderr, "using the buffer %llu\n", tail_buffer);
+    fdebugf(stderr, "using the buffer %llu\n", tail_buffer);
 
     /* Find the correct beginning. 
      * We made sure that 'total_bytes' - 'bytes_up_to_tail_buffer' - 'n_bytes' <= 'tail_buffer->nbytes'.  */
@@ -124,7 +131,7 @@ static void keep_track_of_tail_bytes (uintmax_t n_bytes)
         tail_offset = 0;
     }
     
-    fprintf(stderr, "tail at %d + %d, total bytes %d\n", bytes_up_to_tail_buffer, tail_offset, total_bytes);
+    fdebugf(stderr, "tail at %d + %d, total bytes %d\n", bytes_up_to_tail_buffer, tail_offset, total_bytes);
 }
 
 static void keep_track_of_tail ()
@@ -143,7 +150,7 @@ static void keep_track_of_tail ()
         tail_buffer = tail_buffer->next;
         tail_offset = 0;
         
-        fprintf(stderr, "tail shifted to %d + %d, total bytes %d\n", bytes_up_to_tail_buffer, tail_offset, total_bytes);
+        fdebugf(stderr, "tail shifted to %d + %d, total bytes %d\n", bytes_up_to_tail_buffer, tail_offset, total_bytes);
     }
 }
 
@@ -164,7 +171,7 @@ void buffer_set_appended (size_t size)
     }
 
     debug("data being appended to buffer\n");
-    fprintf(stderr, "size: %d\n", size);
+    fdebugf(stderr, "size: %d\n", size);
 
     /* Input is always read into a fresh buffer.  */
     append->nbytes = size;
@@ -185,7 +192,7 @@ void buffer_set_appended (size_t size)
      one to it.  This is because when reading from a pipe, 'n_read' can
      often be very small.  */
     if (append->nbytes + last->nbytes < BUFSIZ) { /* TODO: What's wrong with "<="? */
-        memcpy(&last->buffer[last->nbytes], append->buffer, append->nbytes); /* TODO: Why not memmove? */
+        memcpy(&last->buffer[last->nbytes], append->buffer, append->nbytes);
         last->nbytes += append->nbytes;
         last->nlines += append->nlines;
         keep_track_of_tail();
@@ -205,7 +212,7 @@ void buffer_set_appended (size_t size)
         if (first_buffer_droppable) {
             debug("dropping first\n");
             assert(first != tail_buffer);
-            fprintf(stderr, "first buffer has %d bytes, resides at %llu and will be given to append, taking next at %llu\n", 
+            fdebugf(stderr, "first buffer has %d bytes, resides at %llu and will be given to append, taking next at %llu\n", 
                     first->nbytes, first, first->next);
             append = first;
             total_bytes -= first->nbytes;
@@ -219,7 +226,7 @@ void buffer_set_appended (size_t size)
             append = malloc(sizeof(linebuffer_t));
         }
         append->next = NULL;
-        fprintf(stderr, "first %llu (%llu) tail %llu (%llu) last %llu (%llu) append %llu (%llu)\n", 
+        fdebugf(stderr, "first %llu (%llu) tail %llu (%llu) last %llu (%llu) append %llu (%llu)\n", 
                 first, first->next, tail_buffer, tail_buffer->next, last, last->next, append, append->next);
     }
     append->nbytes = append->nlines = 0;
@@ -228,7 +235,7 @@ void buffer_set_appended (size_t size)
 
 const char* buffer_get_tail_chunk ()
 {
-    fprintf(stderr, "tailing from buffer %llu\n", tail_buffer);
+    fdebugf(stderr, "tailing from buffer %llu\n", tail_buffer);
     return tail_buffer->buffer;
 }
 
@@ -252,10 +259,10 @@ const char* buffer_advance_chunk (const char* chunk)
     if (chunk) {
         const linebuffer_t* tmp = (const linebuffer_t*)(chunk - offsetof(linebuffer_t, buffer));
         if (tmp->next) {
-            fprintf(stderr, "advancing tail to %llu\n", tmp->next);
+            fdebugf(stderr, "advancing tail to %llu\n", tmp->next);
             return tmp->next->buffer;
         } else {
-            fprintf(stderr, "tail has ended\n");
+            fdebugf(stderr, "tail has ended\n");
             return NULL;
         }
     } else {
