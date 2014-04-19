@@ -14,9 +14,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdio.h>
-#include <fcntl.h>
 #include <sys/types.h>
 
 /* There are a few hints one can provide, which have the
@@ -42,6 +42,7 @@
    value is needed, but it must be guarded by appropriate #ifdefs.  */
 
 #if HAVE_POSIX_FADVISE
+#include <fcntl.h>
 typedef enum {
   FADVISE_NORMAL =     POSIX_FADV_NORMAL,
   FADVISE_SEQUENTIAL = POSIX_FADV_SEQUENTIAL,

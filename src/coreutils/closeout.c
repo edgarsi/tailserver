@@ -29,57 +29,12 @@
 #include "close-stream.h"
 #include "error.h"
 
-static const char *file_name;
 
-/* Set the file name to be reported in the event an error is detected
-   by close_stdout.  */
-void
-close_stdout_set_file_name (const char *file)
-{
-  file_name = file;
-}
-
-static bool ignore_EPIPE /* = false */;
-
-/* Specify the reaction to an EPIPE error during the closing of stdout:
-     - If ignore = true, it shall be ignored.
-     - If ignore = false, it shall evoke a diagnostic, along with a nonzero
-       exit status.
-   The default is ignore = false.
-
-   This setting matters only if the SIGPIPE signal is ignored (i.e. its
-   handler set to SIG_IGN) or blocked.  Only particular programs need to
-   temporarily ignore SIGPIPE.  If SIGPIPE is ignored or blocked because
-   it was ignored or blocked in the parent process when it created the
-   child process, it usually is a bug in the parent process: It is bad
-   practice to have SIGPIPE ignored or blocked while creating a child
-   process.
-
-   EPIPE occurs when writing to a pipe or socket that has no readers now,
-   when SIGPIPE is ignored or blocked.
-
-   The ignore = false setting is suitable for a scenario where it is normally
-   guaranteed that the pipe writer terminates before the pipe reader.  In
-   this case, an EPIPE is an indication of a premature termination of the
-   pipe reader and should lead to a diagnostic and a nonzero exit status.
-
-   The ignore = true setting is suitable for a scenario where you don't know
-   ahead of time whether the pipe writer or the pipe reader will terminate
-   first.  In this case, an EPIPE is an indication that the pipe writer can
-   stop doing useless write() calls; this is what close_stdout does anyway.
-   EPIPE is part of the normal pipe/socket shutdown protocol in this case,
-   and should not lead to a diagnostic message.  */
-
-void
-close_stdout_set_ignore_EPIPE (bool ignore)
-{
-  ignore_EPIPE = ignore;
-}
 
 /* Close standard output.  On error, issue a diagnostic and _exit
-   with status 'exit_failure'.
+   with status 'EXIT_FAILURE'.
 
-   Also close standard error.  On error, _exit with status 'exit_failure'.
+   Also close standard error.  On error, _exit with status 'EXIT_FAILURE'.
 
    Since close_stdout is commonly registered via 'atexit', POSIX
    and the C standard both say that it should not call 'exit',
@@ -102,15 +57,10 @@ close_stdout_set_ignore_EPIPE (bool ignore)
 void
 close_stdout (void)
 {
-  if (close_stream (stdout) != 0
-      && !(ignore_EPIPE && errno == EPIPE))
+  if (close_stream (stdout) != 0)
     {
       char const *write_error = _("write error");
-      if (file_name)
-        error (0, errno, "%s: %s", file_name,
-               write_error);
-      else
-        error (0, errno, "%s", write_error);
+      error (0, errno, "%s", write_error);
 
       _exit (EXIT_FAILURE);
     }

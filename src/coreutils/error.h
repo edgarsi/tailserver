@@ -46,11 +46,6 @@ extern void error_at_line (int __status, int __errnum, const char *__fname,
                            unsigned int __lineno, const char *__format, ...)
      _GL_ATTRIBUTE_FORMAT ((__printf__, 5, 6));
 
-/* If NULL, error will flush stdout, then print on stderr the program
-   name, a colon and a space.  Otherwise, error will call this
-   function without parameters instead.  */
-extern void (*error_print_progname) (void);
-
 /* This variable is incremented each time 'error' is called.  */
 extern unsigned int error_message_count;
 

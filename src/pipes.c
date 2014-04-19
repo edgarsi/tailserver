@@ -43,6 +43,7 @@
 #include <stdlib.h>
 
 #include "fcntl_wrap.h"
+#include "safe_write.h"
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own socket event handling */
 #include <ev.h>
@@ -57,10 +58,8 @@ static ev_io stdin_watcher;
 static void stdout_write_blocking (char* buf, ssize_t size)
 {
     ssize_t n;
-
-    do {
-        n = write(STDOUT_FILENO, buf, size);
-    } while (n < 0 && errno == EINTR); /*TODO: Where's my EAGAIN? */
+    
+    n = safe_write(STDOUT_FILENO, buf, size);
 
     if (n < size) {
         perror(_("Writing to stdout encountered an error"));
@@ -72,8 +71,9 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
     debug("stdin ready (probably)\n");
 
     /* O_NONBLOCK risks bugs and data races because all users of stdin get the effects, including writers. */
-    /* fnctl and ioctl both modify the same (struct file*)->f_flags [linux/fs.h], therefore both unusable. */
-    /* UPDATE: "struct file" is created each open, so freopen should solve our problems. If not, try aio_read() instead */
+    /* fcntl and ioctl both modify the same (struct file*)->f_flags [linux/fs.h], therefore both unusable. */
+    /* UPDATE: "struct file" is created for each open, so freopen should solve our problems. 
+     * If not, try aio_read() instead */
 
     /* "select, read" method has to read char by char (slow) */
     /* Is there data on stdin? */

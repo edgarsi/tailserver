@@ -15,8 +15,8 @@
 
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include "intmax.h"
 
 /* Default number of items to tail. */
 #define DEFAULT_N_LINES 1000

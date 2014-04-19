@@ -17,7 +17,9 @@
 
 /* Written by Eric Blake.  */
 
-#include <config.h>
+#include "config.h"
+
+#ifdef GNULIB_FREOPEN_SAFER
 
 #include "stdio-safer.h"
 
@@ -101,3 +103,5 @@ freopen_safer (char const *name, char const *mode, FILE *f)
     errno = saved_errno;
   return f;
 }
+
+#endif /* ifdef GNULIB_FREOPEN_SAFER */

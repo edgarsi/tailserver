@@ -34,6 +34,7 @@
 #include <getopt.h>
 #include <limits.h>
 #include <stdlib.h>
+#include "intmax.h"
 #include "xstrtol.h"
 #include "error.h"
 
@@ -51,7 +52,7 @@ static ev_signal sigint_watcher;
 /* TODO: Option to stall reading input until either a single connection or timeout occurs 
    -w, --wait[=T] postpone reading input until a connection occurs or timeout (in seconds), if specified
    TODO: Option to choose either block or not block (dropping data seems stupid, closing connection OK) when some socket 
-   can't keep up.  .... third option - buffer all in memory (but position tracking complicates, is it worth it?)
+   can't keep up.  .... third option - buffer all in memory (but position tracking complicates; is it worth it?)
 */
 static struct option const long_options[] =
 {

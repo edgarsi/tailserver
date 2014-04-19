@@ -17,20 +17,11 @@
 
 /* Written by Paul Eggert.  */
 
-#include <stdio.h>
+#include "config.h"
 
-#if GNULIB_FOPEN_SAFER
-FILE *fopen_safer (char const *, char const *);
-#endif
+#include <stdio.h>
 
 #if GNULIB_FREOPEN_SAFER
 FILE *freopen_safer (char const *, char const *, FILE *);
 #endif
 
-#if GNULIB_POPEN_SAFER
-FILE *popen_safer (char const *, char const *);
-#endif
-
-#if GNULIB_TMPFILE_SAFER
-FILE *tmpfile_safer (void);
-#endif

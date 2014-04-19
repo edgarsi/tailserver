@@ -17,6 +17,8 @@
 /* Include this file _after_ system headers if possible.  */
 
 
+#include "config.h"
+
 #include <limits.h>
 
 #include <string.h>

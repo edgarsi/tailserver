@@ -16,7 +16,7 @@
 
 /* Written by Jim Meyering. */
 
-#include <config.h>
+#include "config.h"
 
 /* Specification.  */
 #include "version-etc.h"
