@@ -9,8 +9,8 @@
 .cleanup
 .macros coreutils need
 .portability
-testing
-socat-based tailclient
+.socat-based tailclient
+.testing
 release 1.0 as alpha
 in-code todos
 package ("make dist" fixed)
