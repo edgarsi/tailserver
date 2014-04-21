@@ -50,15 +50,11 @@ static bool ignore_interrupts;
 static ev_signal sigint_watcher;
 /*static ev_signal sigpipe_watcher;*/
 
-/* TODO: Option to stall reading input until either a single connection or timeout occurs 
-   -w, --wait[=T] postpone reading input until a connection occurs or timeout (in seconds), if specified
-   TODO: Option to choose either block or not block (dropping data seems stupid, closing connection OK) when some socket 
-   can't keep up.  .... third option - buffer all in memory (but position tracking complicates; is it worth it?)
-*/
 static struct option const long_options[] =
 {
     {"bytes", required_argument, NULL, 'c'},
     {"lines", required_argument, NULL, 'n'},
+    {"wait", no_argument, NULL, 'w'},
     {"ignore-interrupts", no_argument, NULL, 'i'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
@@ -84,8 +80,11 @@ Continue giving all new lines that arrive (just like 'tail -f' does).\n\
   -c, --bytes=K             output the last K bytes\n\
 "), stdout);
         printf(_("\
-  -n, --lines=K             output the last K lines, instead of the last %d;\n\
+  -n, --lines=K             output the last K lines, instead of the last %d\n\
 "), DEFAULT_N_LINES);
+        fputs(_("\
+  -w, --wait                postpone processing stdin until a client connects\n\
+"), stdout);
         fputs(_("\
   -i, --ignore-interrupts   ignore interrupt signals\n\
 "), stdout);
@@ -191,9 +190,10 @@ int main (int argc, char** argv)
 
     bool count_lines = true;
     uintmax_t n_units = DEFAULT_N_LINES;
+    bool wait_for_client = false;
     ignore_interrupts = false;
 
-    while ((optc = getopt_long(argc, argv, "c:n:i", long_options, NULL)) != -1) {
+    while ((optc = getopt_long(argc, argv, "c:n:wi", long_options, NULL)) != -1) {
         switch (optc)
         {
         case 'c':
@@ -210,6 +210,10 @@ int main (int argc, char** argv)
                                     _("invalid number of bytes")));
                 }
             }
+            break;
+
+        case 'w':
+            wait_for_client = true;
             break;
 
         case 'i':
@@ -241,6 +245,7 @@ Call with --help for options.\n"), stderr);
 
         buffer_config_count_lines(count_lines);
         buffer_config_n_units(n_units);
+        pipes_config_wait_for_client(wait_for_client);
         sockets_config_file(file_path);
 
         /* Launch */

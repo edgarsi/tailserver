@@ -16,8 +16,7 @@ tailclient -w -f logfile.sock | grep ERROR > errorfile.txt &
 		tailclient -n 10 logfile.sock
 	done
 } > longrun_debug.txt & WAITPID=$!
-#myprogram | tailserver -w logfile.sock | lzop > logfile.lzo
-myprogram | tailserver logfile.sock | lzop > logfile.lzo
+myprogram | tailserver -w logfile.sock | lzop > logfile.lzo
 kill $WAITPID
 
 sleep 1

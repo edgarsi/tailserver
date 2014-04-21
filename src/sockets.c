@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include "sockets.h"
+#include "pipes.h"
 #include "buffer.h"
 
 #include <sys/stat.h>
@@ -311,6 +312,8 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         tailer_send_buffered_tail(tailer);
 
     }
+
+    pipes_on_new_client ();
 
     debug("new connection successful\n");
 }

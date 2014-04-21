@@ -54,6 +54,8 @@
 
 static ev_io stdin_watcher;
 
+static bool waiting_for_client;
+
 
 static void stdout_write_blocking (char* buf, ssize_t size)
 {
@@ -121,6 +123,19 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
     }
 }
 
+void pipes_config_wait_for_client (bool wait)
+{
+    waiting_for_client = true;
+}
+
+void pipes_on_new_client ()
+{
+    if (waiting_for_client) {
+        waiting_for_client = false;
+        ev_io_start(EV_DEFAULT_UC_ &stdin_watcher);
+    }
+}
+
 void pipes_init ()
 {
     /*if (O_BINARY && !isatty(STDIN_FILENO)) {  <- tail.c does not reopen tty but I can't figure out why... */
@@ -134,7 +149,9 @@ void pipes_init ()
 
     /* Listen to STDIN */
     ev_io_init(&stdin_watcher, stdin_cb, STDIN_FILENO, EV_READ);
-    ev_io_start(EV_DEFAULT_UC_ &stdin_watcher);
+    if (!waiting_for_client) {
+        ev_io_start(EV_DEFAULT_UC_ &stdin_watcher);
+    }
 }
 
 void pipes_final ()
