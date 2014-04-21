@@ -25,11 +25,10 @@ you can run
 Reading the tail:  
 `tailclient -n 100 -f logfile.sock`  
 `tailclient -n 5 logfile.sock`  
-`...`  *TODO: When tailclient is not socat dependent, move arguments of the examples to the end.*
+`...`  
 
 ### Install
-Dependencies: cmake, libev  
-Dependencies: tailclient uses `socat`. *TODO: Make a version which doesn't use socat.* 
+Dependencies: cmake, libev, socat  
 ```
 git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
