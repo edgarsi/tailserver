@@ -196,7 +196,7 @@ bool buffer_set_appended (size_t size)
     /* If there is enough room in the last buffer read, just append the new
      one to it.  This is because when reading from a pipe, 'n_read' can
      often be very small.  */
-    if (append->nbytes + last->nbytes < BUFSIZ) { /* TODO: What's wrong with "<="? */
+    if (append->nbytes + last->nbytes < BUFSIZ) {
         memcpy(&last->buffer[last->nbytes], append->buffer, append->nbytes);
         last->nbytes += append->nbytes;
         last->nlines += append->nlines;
