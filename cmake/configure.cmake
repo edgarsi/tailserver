@@ -117,8 +117,6 @@ ENDIF()
 #
 # Tests for header files
 #
-#TODO: Restore those include files which are needed/useful. I deleted them all.
-#TODO: Simply go through the old list and search for each header. If found, add here and wrap around in macros.
 INCLUDE (CheckIncludeFiles)
 INCLUDE (CheckIncludeFileCXX)
 CHECK_INCLUDE_FILES (fcntl.h HAVE_FCNTL_H)
@@ -132,11 +130,11 @@ CHECK_INCLUDE_FILES (unistd.h HAVE_UNISTD_H)
 #
 # Tests for functions
 #
-#TODO: Restore those include files which are needed/useful. I deleted them all.
 CHECK_FUNCTION_EXISTS (bzero HAVE_BZERO)
 CHECK_FUNCTION_EXISTS (memcpy HAVE_MEMCPY)
 CHECK_FUNCTION_EXISTS (memmove HAVE_MEMMOVE)
 CHECK_FUNCTION_EXISTS (posix_fadvise HAVE_POSIX_FADVISE)
+CHECK_FUNCTION_EXISTS (stpcpy HAVE_STPCPY)
 CHECK_FUNCTION_EXISTS (fcntl HAVE_FCNTL)
 CHECK_FUNCTION_EXISTS (__fpending HAVE_DECL___FPENDING)
 CHECK_SYMBOL_EXISTS (ferror_unlocked stdio.h HAVE_DECL_FERROR_UNLOCKED)

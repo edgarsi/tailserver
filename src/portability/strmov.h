@@ -14,19 +14,12 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-
-/*TODO: Why do my headers have no wrappers? */
-
-/*TODO: Move through all functions I use - some might be defined by mysql in weird ways */
-
-/*TODO: Go through m_string.h - maybe I'm missing something useful */
-
-
+#ifndef STRMOV_H
+#define STRMOV_H 1
 
 #include "config.h"
 
 #include "my_compiler.h"
-
 
 #if defined(HAVE_STPCPY) && MY_GNUC_PREREQ(3, 4) && !defined(__INTEL_COMPILER)
 #define strmov(A,B) __builtin_stpcpy((A),(B))
@@ -38,13 +31,8 @@ extern char *stpcpy(char *, const char *);	/* For AIX with gcc 2.95.3 */
 #endif
 
 #ifndef strmov
-#define strmov_overlapp(A,B) strmov(A,B)
-#define strmake_overlapp(A,B,C) strmake(A,B,C)
-#endif
-
-#ifndef strmov
 extern	char *strmov(char *dst,const char *src);
-#else
-extern	char *strmov_overlapp(char *dst,const char *src);
 #endif
 
+
+#endif /* STRMOV_H */

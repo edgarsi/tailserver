@@ -23,10 +23,7 @@
 
 #include "strmov.h"
 
-#ifdef strmov
-#undef strmov
-#define strmov strmov_overlapp
-#endif
+#ifndef strmov
 
 char *strmov(register char *dst, register const char *src)
 {
@@ -34,3 +31,4 @@ char *strmov(register char *dst, register const char *src)
   return dst-1;
 }
 
+#endif

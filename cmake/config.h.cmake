@@ -30,6 +30,7 @@
 #cmakedefine HAVE_MEMCPY 1
 #cmakedefine HAVE_MEMMOVE 1
 #cmakedefine HAVE_POSIX_FADVISE 1
+#cmakedefine HAVE_STPCPY 1
 #cmakedefine HAVE_FCNTL 1
 #cmakedefine HAVE_DECL___FPENDING 1
 #cmakedefine HAVE_DECL_FERROR_UNLOCKED 1
