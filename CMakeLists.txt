@@ -138,6 +138,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/include)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(docs)
 
+# Temporary stuff, until normal tailclient is written.
+INSTALL(FILES docs/tailclient.sh 
+  DESTINATION ${INSTALL_BINDIR}
+  PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  RENAME tailclient
+)
 
 
 CONFIGURE_FILE(cmake/config.h.cmake   ${CMAKE_BINARY_DIR}/include/config.h)
