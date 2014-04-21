@@ -32,7 +32,7 @@ timeout 1s tailclient $socket_file > $tmpfile
 # Merge with file contents
 # NOTE: One line less is output to get rid of the potentially truncated last line.
 echo "zcat $logfile | tail $tail_args | head -n -1 | sort -nm - $tmpfile | uniq | tail $tail_args"
-zcat $logfile | tail $tail_args | head -n -1 | sort -nm - $tmpfile | uniq | tail $tail_args
+$decompressor $logfile | tail $tail_args | head -n -1 | sort -nm - $tmpfile | uniq | tail $tail_args
 
 # Keep following
 { sleep 1; kill -CONT $tailserver_cat_pid; rm $tmpfile; } &
