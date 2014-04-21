@@ -1,27 +1,22 @@
 
-somewhere must be tools to test on vast amount of platforms automatically.
-test with 65535 and more clients sending SYN without a followup
-test with a socket file path ""
-test with a slow reader (should block stdin of tailserver), slow stdout too why not
+-(disappointed to find that nobody has cared enough to make any)somewhere must be tools to test on vast amount of platforms automatically.
+-(don't waste time)test with 65535 and more clients sending SYN without a followup
+.test with a socket file path ""
+.(see below)test with a slow reader (should block stdin of tailserver), slow stdout too why not
 
 
+Slow tailer test:
+[terminal 1] test/fast_server.sh test.sock | pv > /dev/null
+[terminal 2] socat -u UNIX-CONNECT:test.sock - | sed -n '0~10000p'
+[terminal 3] socat -u UNIX-CONNECT:test.sock - | { pv -L 1 -Ss 10; pv; } > /dev/null
+^ You should see [terminal 2] being blocked for a moment and then resume without data lost whereas [terminal 3] will
+get disconnected for being too slow.
 
-tail_using_logfile.sh
-===
-usage=$'\n\t'"Usage: $0 [<-c|-n> K] <compressed_file> <decompressor> <tailserver_pid>"
-usage="$usage"$'\n\t'"First of all, assumes you've launched your program like this: program | cat -n | tailserver <logfile> | <compressor> > <compressed_file>"
-usage="$usage"$'\n\t'"Yes, this means you will have line numbers in your log files. If you didn't, how would you merge?"
-usage="$usage"$'\n\t'"Output the last lines or bytes by decompressing <compressed_file>. "
-usage="$usage""Add the lines from tailserver (which are not in the compressed file yet). Continue following tail."
-tail_args=read cnK
-logfile=${1?$usage}
-decompressor=${2?$usage}
-tailserver_pid=${3?$usage}
+Slow stdout test:
+[terminal 1] test/fast_server.sh test.sock | { pv -Ss 10000000; pv -L 1 -Ss 10; pv; } > /dev/null
+[terminal 2] socat -u UNIX-CONNECT:test.sock - | sed -n '0~10000p'
+^ You should see [terminal 2] patiently block for the 10 seconds [terminal 1] is slow.
 
-kill -STOP $tailserver_pid
-socat -u UNIX-CONNECT:logfile.sock - | tail -n 1000 > tmp_tail.txt
-zcat logfile.gz | tail $tail_args | sort -nm - tmp_tail.txt  <- What are the memory requirements for this?
-	| tail $tail_args
-{ sleep 1; kill -CONT $tailserver_pid; } & # any better way?
-socat -u UNIX-CONNECT:logfile.sock - | tail -n 0 -f
+Slow stdin test:
+Wait.. what? Trivially tested by test/slow_server.sh 
 
