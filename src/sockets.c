@@ -208,8 +208,11 @@ static void tailer_readable_cb (EV_P_ ev_io* w, int revents)
 
 tailer_t* tailer_init (int socket)
 {
-    /* TODO: malloc error handling! */
     tailer_t* tailer = malloc(sizeof(tailer_t));
+    if (tailer == NULL) {
+        fputs(_("Out of memory. Can't allocate for new client.\n"), stderr);
+        return NULL;
+    }
     tailer->prev = NULL;
     tailer->next = first_tailer;
     if (first_tailer) {
@@ -308,6 +311,11 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         /* Add the new connection, send it the tail */
 
         tailer_t* tailer = tailer_init(new_sock);
+        if (tailer == NULL) {
+            shutdown(new_sock, SHUT_RDWR);
+            close(new_sock);
+            return;
+        }
 
         tailer_send_buffered_tail(tailer);
 

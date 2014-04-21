@@ -109,9 +109,17 @@ static void server_final ();
 
 static void init_all ()
 {
+    /* Look and stare at poor man's exception handling! */
+
     server_init();
-    buffer_init();
+
+    if ( ! buffer_init()) {
+        server_final();
+        exit(EXIT_FAILURE);
+    }
+
     pipes_init();
+
     if ( ! sockets_init()) {
         pipes_final();
         buffer_final();

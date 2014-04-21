@@ -154,6 +154,11 @@ static void keep_track_of_tail ()
     }
 }
 
+static void print_oom_error ()
+{
+    fputs(_("Out of memory. Can't allocate for buffer.\n"), stderr);
+}
+
 char* buffer_end ()
 {
     return append->buffer;
@@ -164,10 +169,10 @@ size_t buffer_available_for_append ()
     return sizeof(append->buffer);
 }
 
-void buffer_set_appended (size_t size)
+bool buffer_set_appended (size_t size)
 {
     if (size == 0) {
-        return;
+        return true;
     }
 
     debug("data being appended to buffer\n");
@@ -221,9 +226,12 @@ void buffer_set_appended (size_t size)
             lines_up_to_tail_buffer -= first->nlines;
             first = first->next;
         } else {
-            /* TODO: Handle errors! We might be in a RAM jail. */
             debug("malloc\n");
             append = malloc(sizeof(linebuffer_t));
+            if (append == NULL) {
+                print_oom_error();
+                return false;
+            }
         }
         append->next = NULL;
         fdebugf(stderr, "first %llu (%llu) tail %llu (%llu) last %llu (%llu) append %llu (%llu)\n", 
@@ -231,6 +239,7 @@ void buffer_set_appended (size_t size)
     }
     append->nbytes = append->nlines = 0;
     debug("append ended fine\n");
+    return true;
 }
 
 size_t buffer_size ()
@@ -276,7 +285,7 @@ const char* buffer_advance_chunk (const char* chunk)
 }
 
 
-void buffer_init()
+bool buffer_init()
 {
     if (!n_units_configured) {
         n_units = DEFAULT_N_LINES;
@@ -285,14 +294,23 @@ void buffer_init()
         count_lines = true;
     }
 
-    /* TODO: Search for all malloc calls... */
     first = last = tail_buffer = malloc(sizeof(linebuffer_t));
+    if (first == NULL) {
+        print_oom_error();
+        return false;
+    }
     first->nbytes = first->nlines = 0;
     first->next = NULL;
 
     append = malloc(sizeof(linebuffer_t));
+    if (append == NULL) {
+        print_oom_error();
+        return false;
+    }
     append->nbytes = first->nlines = 0;
     append->next = NULL;
+    
+    return true;
 }
 
 void buffer_final()

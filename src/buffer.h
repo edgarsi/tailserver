@@ -31,7 +31,7 @@ void buffer_config_n_units (uintmax_t n_units);
 /* Write */
 char* buffer_end ();
 size_t buffer_available_for_append ();
-void buffer_set_appended (size_t size); /* Invalidates all pointers */
+bool buffer_set_appended (size_t size); /* Invalidates all pointers */
 
 /* Read */
 size_t buffer_size ();
@@ -41,7 +41,7 @@ size_t buffer_chunk_size (const char* chunk); /* Can only read small(!) size chu
 const char* buffer_advance_chunk (const char* chunk); /* Offset always zero after the first chunk. Returns NULL at end. */
 
 
-void buffer_init ();
+bool buffer_init ();
 void buffer_final ();
 
 
