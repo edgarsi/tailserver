@@ -44,6 +44,10 @@ fi
 	fi
 } | {
 	read tail_size
+	if [ "$tail_size" == "" ]; then
+		echo "Could not make a connection." 1>&2
+		exit
+	fi
 	head -c $tail_size | tail $tail_arguments
 	if [ $follow -eq 1 ]; then
 		cat
