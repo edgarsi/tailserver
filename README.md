@@ -11,23 +11,21 @@ There are both nice and weird alternatives, see below.
 Generally: If you have large amounts of data going through the pipe, and you may want to do 
 `tail -f --lines=K` or `tail -f --bytes=K` on that pipe, use `tailserver`.
 
-### Description (WARNING: pre-alpha...)
+### Description
 The `tailserver` command reads stdin and copies it to stdout.  
 Additionaly, it serves the output to a UNIX domain socket. Clients (`tailclient`) receive the last lines
-and lines which arrive since. Combining with tail allows to use this for different simultanous tails, see example below.
+and lines which arrive since, if they want to.
 
 ### Example
 Instead or running  
 `myprogram | gzip > logfile.gz`  
 you can run  
-<pre style="display: inline">myprogram | <b>tailserver -s logfile.sock</b> | gzip > logfile.gz</pre>
+<pre style="display: inline">myprogram | <b>tailserver logfile.sock</b> | gzip > logfile.gz</pre>
 
 Reading the tail:  
-`socat -u UNIX-CONNECT:logfile.sock - | tail -n 100 -f`  
-`socat -u UNIX-CONNECT:logfile.sock - | tail -n 5`  
-`...`  
-*TODO: I should deploy a `tailclient <file>` script as a cleaner rename for "socat -u UNIX-CONNECT:<file> -"*  
-*TODO: It could also handle the situations where to file does not exist - choice of wait or bail.*  
+`tailclient -n 100 -f logfile.sock`  
+`tailclient -n 5 logfile.sock`  
+`...`  *TODO: When tailclient is not socat dependent, move arguments of the examples to the end.*
 
 ### Install
 Dependencies: cmake, libev  
@@ -47,20 +45,20 @@ This example combines all of these:
 * Get the last 100 lines if works for more than an hour, and 10 lines each 10 minutes from then on 
 
 ```
-tailclient -w logfile.sock | grep ERROR > errorfile.txt &
+tailclient -w -f logfile.sock | grep ERROR > errorfile.txt &
 {	sleep 3600
 	echo "[Works for more than an hour at $(date)]"
-	tailclient logfile.sock | tail -n 100
+	tailclient -n 100 logfile.sock
 	while [ 1 ]; do
 		sleep 600
 		echo -e "...\n...\n...\n[Last lines at $(date)]"
-		tailclient logfile.sock | tail -n 10
+		tailclient -n 10 logfile.sock
 	done
 } > longrun_debug.txt & WAITPID=$!
-myprogram | tailserver -w logfile.sock | lzop > logfile.lzo
+myprogram | tailserver logfile.sock | lzop > logfile.lzo 
 kill $WAITPID
 ```
-*TODO: Test this!*
+*TODO: Implement -w for tailserver!*
 
 Look at how pretty it is!
 
@@ -88,7 +86,7 @@ Look at how pretty it is!
 	The only compressor I know which flushes regulary is the `xz-utils` compressor (--flush-timeout) and that will cost you compression ratio. 
 	I don't know of any compressors which flush on request (such as unix signal). None will give you real-time `tail -f` either. 
 	Anyway, I insist that merging the output of the compressed file with `tailserver` results is the easiest way, and most elegant.
-	Try [tail_using_logfile.sh](tail_using_logfile.sh) for reference.
+	Try [tail_using_logfile.sh](docs/tail_using_logfile.sh) for reference.
 
 
 
