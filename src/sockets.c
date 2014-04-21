@@ -252,7 +252,6 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
     uint retry;
 
     /* Is this a new connection request? */
-    /* TODO: Look first, then try to accept! (I think I've seen a flag somewhere which indicates if connections are pending to be accepted) */
 
     debug("new connection request, apparently\n");
 
@@ -261,9 +260,9 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
 #endif
     for (retry=0; retry < MAX_ACCEPT_RETRY; retry++) {
         size_socket length = sizeof(struct sockaddr_storage);
-        
+
         new_sock = accept(unix_sock, (struct sockaddr *)(&cAddr), &length);
-        
+
         if (new_sock != INVALID_SOCKET || (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)) {
             break;
         }
@@ -350,42 +349,36 @@ bool sockets_init ()
         return false;
     }
     if ((unix_sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-        perror(_("Can't start server : UNIX Socket ")); /* TODO: Doesn't this need to go to stderr? */
+        perror(_("Can't start server : UNIX Socket "));
         return false;
     }
     bzero((char*) &UNIXaddr, sizeof(UNIXaddr));
     UNIXaddr.sun_family = AF_UNIX;
     strmov(UNIXaddr.sun_path, socket_file_path);
 
-    /* TODO: Check if that path is a socket or unused... otherwise bail out and quit. */
-    /* UPDATE: Don't bail out! Instead of letting set params and group by options, allow creating file beforehand. Unlink at exit only if created. */
-    unlink(socket_file_path);
+    /* Unlinking is useful if tailserver is killed abruptly. But what if some other tailserver has created 
+     * and still uses that file? */
+    /*unlink(socket_file_path);*/
 
-    {
-        int arg = 1;
-        setsockopt(unix_sock, SOL_SOCKET, SO_REUSEADDR, (char*) &arg, sizeof(arg));
-        /* Future OSs are unknown and this doesn't hurt. */
-    }
+    /* It is tempting to set at least u+rw regardless of umask because POSIX states that rw is needed
+     * for the socket file to be connectable. Could be helpful. Could be restricting. Don't annoy the user. */
+    /*mode_t omask = umask(0); umask(oumask & ~(S_IRUSR | S_IWUSR | S_IXUSR)) #include posixstat.h */
 
-    umask(0); /* TODO: Both mysqld and postgre does this. Redis does not. Why? */
-
-    if (bind(unix_sock, (struct sockaddr *)(&UNIXaddr), sizeof(UNIXaddr)) < 0) { /* TODO: Why casting magic? */
-        printf(_("Can't start server : Bind on unix socket. "));
-        printf(_("Do you already have another server running on socket: \"%s\" ?"), socket_file_path);
+    if (bind(unix_sock, (struct sockaddr *)(&UNIXaddr), sizeof(UNIXaddr)) < 0) {
+        perror(_("Can't start server : Bind on unix socket. "));
+        fprintf(stderr, _("Do you already have another server running on socket: \"%s\" ? "
+                "If not, try deleting the socket file and run again.\n"), socket_file_path);
         close(unix_sock);
         unix_sock = INVALID_SOCKET;
         return false;
     }
 
-    /* TODO: Isn't (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) nicer? 
-     * UPDATE: Maybe, but then you need to copy posixstat.h because of the problems described in it. */ 
-    umask(0660); /* TODO: Why does postgre use 0777? Nginx uses 0666 too. Anyway, allow to change using options. Group name param too. (User is useless because only root could change and root shouldn't launch tailable programs anyway) */
 #if defined(S_IFSOCK) && defined(SECURE_SOCKETS)
     (void) chmod(socket_file_path,S_IFSOCK); /* Fix solaris 2.6 bug */
 #endif
 
     if (listen(unix_sock, 65535) < 0) { /* backlog limiting is done with kernel parameters */
-        printf(_("listen() on Unix socket failed with error %d"), errno);
+        fprintf(stderr, _("listen() on Unix socket failed with error %d"), errno);
         sockets_final();
         return false;
     }
