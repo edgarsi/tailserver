@@ -106,7 +106,10 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
     if (res > 0) {
 
         debug("stdin data read!\n");
-        buffer_set_appended(res);
+        if ( ! buffer_set_appended(res)){
+            ev_break(EV_A_ EVBREAK_ALL);
+            return;
+        }
 
         /* Write immediately */
         stdout_write_blocking(new_data_start, res);
@@ -125,7 +128,7 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
 
 void pipes_config_wait_for_client (bool wait)
 {
-    waiting_for_client = true;
+    waiting_for_client = wait;
 }
 
 void pipes_on_new_client ()
