@@ -27,7 +27,7 @@ kill -STOP $tailserver_cat_pid
 
 # Get as much as possible from buffer
 tmpfile=tail_using_logfile.tmp
-timeout 1s tailclient $socket_file > $tmpfile
+tailclient $socket_file > $tmpfile
 
 # Merge with file contents
 # NOTE: One line less is output to get rid of the potentially truncated last line.
@@ -36,5 +36,5 @@ $decompressor $logfile | tail $tail_args | head -n -1 | sort -nm - $tmpfile | un
 
 # Keep following
 { sleep 1; kill -CONT $tailserver_cat_pid; rm $tmpfile; } &
-tailclient $socket_file | tail -n 0 -f
+tailclient -n 0 -f $socket_file
 
