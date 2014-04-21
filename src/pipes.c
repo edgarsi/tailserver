@@ -58,11 +58,19 @@ static ev_io stdin_watcher;
 static void stdout_write_blocking (char* buf, ssize_t size)
 {
     ssize_t n;
-    
-    n = safe_write(STDOUT_FILENO, buf, size);
+
+    do {
+        n = safe_write(STDOUT_FILENO, buf, size);
+        /* stdout is God. retry until time ends. */
+    } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
 
     if (n < size) {
-        perror(_("Writing to stdout encountered an error"));
+        if (n < 0 && errno == EPIPE){
+            /* The pipe of stdout is lost. Let the program end gracefully. */
+        } else {
+            perror(_("Writing to stdout encountered an error"));
+        }
+        ev_break(EV_DEFAULT_UC_ EVBREAK_ALL);
     }
 }
 

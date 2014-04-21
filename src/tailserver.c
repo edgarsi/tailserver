@@ -48,6 +48,7 @@ const char *program_name = PROGRAM_NAME;
 
 static bool ignore_interrupts;
 static ev_signal sigint_watcher;
+/*static ev_signal sigpipe_watcher;*/
 
 /* TODO: Option to stall reading input until either a single connection or timeout occurs 
    -w, --wait[=T] postpone reading input until a connection occurs or timeout (in seconds), if specified
@@ -140,6 +141,14 @@ static void sigint_cb (EV_P_ ev_signal* w ATTRIBUTE_UNUSED, int revents ATTRIBUT
     ev_break(EV_A_ EVBREAK_ALL);
 }
 
+/*
+static void sigpipe_cb (EV_P_ ev_signal* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNUSED)
+{
+    fputs("sigpipe_cb\n", stderr);
+    ev_break(EV_A_ EVBREAK_ALL);
+}
+*/
+
 static void server_init ()
 {
     ev_default_loop(
@@ -155,8 +164,9 @@ static void server_init ()
         ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
         ev_signal_start(EV_DEFAULT_UC_ &sigint_watcher);
     }
-    
-    /* Always ignore SIGPIPE - why should we be bothered? */
+
+    /* SIGPIPE is called when write on any fd fails with EPIPE, even sockets. We can't have that... */
+    /* So, let the program stay alive until an attempt to write to the broken STDOUT is made. */
     signal(SIGPIPE, SIG_IGN);
 }
 

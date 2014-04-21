@@ -93,24 +93,54 @@ static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t
 {
     ssize_t n;
 
+    /* The socket is nonblocking (on normal platforms) but safe_write can handle that, partial blocking. */
+    /* Full blocking: */
+    /*  Make this function block as stdout_write_blocking does, i.e., forever. */
+    /*  If this is eats too much CPU, try dynamically removing the O_NONBLOCK. It's still a weird solution though. */
+    /* Partial blocking: */
+    /*  Use that safe_write being safe will not block forever. Get rid of blocking tailers for stdout must not be blocked. */
     n = safe_write(tailer->socket, buf, size);
 
     if (n < size) {
-        perror(_("Writing to client encountered an error"));
+        if (n < 0 && (errno == EPIPE /* Broken pipe */
+                   || errno == ECONNRESET /* Connection reset by peer */
+        )) {
+            /* Normally broken connection. Not an error. */
+        } else {
+            perror(_("Writing to client encountered an error. Can't keep up the pace? Ditching the injured."));
+        }
     }
     return n;
 }
 
 static void tailer_send_buffered_tail (tailer_t* tailer)
 {
+    /* Buffer size */
+
+    {
+        char s[1024];
+        sprintf(s, "%llu\n", (unsigned long long int)buffer_size());
+        size_t strlen_s = strlen(s);
+
+        ssize_t size_written = tailer_write_blocking(tailer, s, strlen_s);
+
+        if (size_written < (ssize_t)strlen_s) {
+            debug("written too little (writing size)\n");
+            tailer_final(tailer);
+            return;
+        }
+    }
+
+    /* Contents of the buffer */
+
     const char* pos = buffer_get_tail_chunk();
     size_t offset = buffer_get_tail_offset();
     size_t chunk_size = buffer_chunk_size(pos);
 
     while (chunk_size > 0) {
-        
+
         ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
-        
+
         if (size_written < (ssize_t)(chunk_size - offset)) {
             debug("written too little\n");
             tailer_final(tailer);
@@ -151,18 +181,26 @@ static void tailer_readable_cb (EV_P_ ev_io* w, int revents)
     ssize_t res = read(tailer->socket, buf, sizeof(buf));
 
     if (res > 0) {
-        /* Client has sent something. Ignoring seems nicer than killing the connection. Undocumented. */
+        /* Client has sent something. End the connection. */
+        /* This feature is not documented but is the heart of tailclient, so won't be changed. */
+        /* This is used for "tail but do not follow" mode. */
     } else
     if (res == 0) {
         /* EOF */
     } else
     if (res < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
-        perror(_("Connection error during read"));
+        if (errno == ECONNRESET /* Connection reset by peer */
+         || errno == ECONNABORTED /* Software caused connection abort */
+        ) {
+            /* Normally broken connection. Not an error. */
+        } else {
+            perror(_("Connection error during read"));
+        }
         error = true;
     }
 
-    if (res == 0 || error) {
-        debug("eof or error, ending client\n");
+    if (res >= 0 || error) {
+        debug("data, eof or error, ending client\n");
         tailer_final(tailer);
     }
 }
@@ -222,7 +260,7 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         
         new_sock = accept(unix_sock, (struct sockaddr *)(&cAddr), &length);
         
-        if (new_sock != INVALID_SOCKET || (errno != EINTR && errno != EAGAIN)) {
+        if (new_sock != INVALID_SOCKET || (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)) {
             break;
         }
         perror(_("Retrying accept")); /* This should never happen? */
@@ -321,8 +359,8 @@ bool sockets_init ()
     umask(0); /* TODO: Both mysqld and postgre does this. Redis does not. Why? */
 
     if (bind(unix_sock, (struct sockaddr *)(&UNIXaddr), sizeof(UNIXaddr)) < 0) { /* TODO: Why casting magic? */
-        printf(_("Can't start server : Bind on unix socket"));
-        printf(_("Do you already have another server running on socket: %s ?"), socket_file_path);
+        printf(_("Can't start server : Bind on unix socket. "));
+        printf(_("Do you already have another server running on socket: \"%s\" ?"), socket_file_path);
         close(unix_sock);
         unix_sock = INVALID_SOCKET;
         return false;

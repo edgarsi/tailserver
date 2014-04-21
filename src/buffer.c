@@ -233,6 +233,11 @@ void buffer_set_appended (size_t size)
     debug("append ended fine\n");
 }
 
+size_t buffer_size ()
+{
+    return total_bytes;
+}
+
 const char* buffer_get_tail_chunk ()
 {
     fdebugf(stderr, "tailing from buffer %llu\n", tail_buffer);

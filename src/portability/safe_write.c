@@ -21,23 +21,25 @@
 #include <errno.h>
 
 
-#define PANIC_LOOP_ITERATIONS 10000 /* uneducated guess */
+#define PANIC_LOOP_ITERATIONS 1000000 /* educated guess */
 
 ssize_t safe_write (int fd, const char* buf, ssize_t size)
 {
     ssize_t n;
     size_t safety_counter = 0;
 
+    /* Using active blocking because EINTR (for all) and EAGAIN (for pipe fds at least) may always happen. */
+    /* Plus, blockability of some fds may not be controllable, such as pipes shared with other processes. */
     do {
         if (++safety_counter > PANIC_LOOP_ITERATIONS) {
             break;
         }
-        
+
         n = write(fd, buf, size);
         
-    } while (n < 0 && (errno == EINTR || errno == EAGAIN));
+    } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
 
-    if (safety_counter == PANIC_LOOP_ITERATIONS) {
+    if (safety_counter > PANIC_LOOP_ITERATIONS) {
         perror(_("System is actively blocking a write attempt"));
     }
 
