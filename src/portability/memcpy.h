@@ -14,14 +14,19 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#ifndef MEMCPY_H
+#define MEMCPY_H 1
 
 #include "config.h"
 #include "my_string.h"
 
-#if !defined(HAVE_MEMCPY)
+#if !defined(HAVE_MEMCPY) && !defined(memcpy)
 #if defined(HAVE_MEMMOVE)
 #define memcpy                 memmove
 #else
 #define memcpy(d, s, n)        bcopy ((s), (d), (n))
 #endif
 #endif
+
+
+#endif /* MEMCPY_H */

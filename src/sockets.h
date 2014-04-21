@@ -13,6 +13,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef SOCKETS_H
+#define SOCKETS_H 1
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -25,3 +27,5 @@ void sockets_write_blocking (char* buf, ssize_t size);
 bool sockets_init ();
 void sockets_final ();
 
+
+#endif /* SOCKETS_H */

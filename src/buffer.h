@@ -13,6 +13,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef BUFFER_H
+#define BUFFER_H 1
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -42,3 +44,5 @@ const char* buffer_advance_chunk (const char* chunk); /* Offset always zero afte
 void buffer_init ();
 void buffer_final ();
 
+
+#endif /* BUFFER_H */

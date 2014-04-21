@@ -13,6 +13,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef FCNTL_WRAP_H
+#define FCNTL_WRAP_H 1
+
 #include "config.h"
 
 #if defined(HAVE_FCNTL_NONBLOCK) || defined(HAVE_FCNTL_NDELAY)
@@ -29,3 +32,5 @@
 #  endif
 #endif
 
+
+#endif /* FCNTL_WRAP_H */

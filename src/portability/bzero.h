@@ -14,13 +14,16 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#ifndef BZERO_H
+#define BZERO_H 1
 
 #include "config.h"
 #include "my_string.h"
-
 
 #if !defined(bzero) && (!defined(HAVE_BZERO) || defined(_AIX))
 /* AIX has bzero() as a function, but the declaration prototype is strangely hidden */
 # define bzero(A,B)             memset((A),0,(B))
 #endif
 
+
+#endif /* BZERO_H */

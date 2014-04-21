@@ -13,8 +13,14 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef OFFSETOF_H
+#define OFFSETOF_H 1
+
 #include <stddef.h>
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
+
+
+#endif /* OFFSETOF_H */

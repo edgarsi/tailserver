@@ -13,8 +13,14 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef SAFE_WRITE_H
+#define SAFE_WRITE_H 1
+
 #include <unistd.h>
 #include <stddef.h>
 
 /* Will retry EINTR, EAGAIN and EWOULDBLOCK for a while but will bail out after some indeterminate time. */
 ssize_t safe_write (int fd, const char* buf, ssize_t size);
+
+
+#endif /* SAFE_WRITE_H */

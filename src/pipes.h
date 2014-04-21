@@ -13,6 +13,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef PIPES_H
+#define PIPES_H 1
+
 #include <stdbool.h>
 
 void pipes_config_wait_for_client (bool wait); /* wait for sockets client before reading stdin */
@@ -22,3 +25,5 @@ void pipes_on_new_client ();
 void pipes_init ();
 void pipes_final ();
 
+
+#endif /* PIPES_H */
