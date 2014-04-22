@@ -144,7 +144,7 @@ void pipes_init ()
     /*if (O_BINARY && !isatty(STDIN_FILENO)) {  <- tail.c does not reopen tty but I can't figure out why... */
     if ( ! xfreopen(NULL, "rb", stdin)) {
         fputs(_("Are you sharing stdin with a privileged process? "
-                "Try launching 'cat | tailserver ...' instead."), stderr);
+                "Try launching 'cat | tailserver ...' instead.\n"), stderr);
         exit(EXIT_FAILURE);
     }
 #ifdef HAVE_FCNTL_NONBLOCK
