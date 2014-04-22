@@ -23,7 +23,7 @@
 #include "stdio--.h"
 #include <stdlib.h>
 
-void
+bool
 xfreopen (char const *filename, char const *mode, FILE *fp)
 {
   if (!freopen (filename, mode, fp))
@@ -33,7 +33,9 @@ xfreopen (char const *filename, char const *mode, FILE *fp)
                           : (fp == stdout ? _("stdout")
                              : (fp == stderr ? _("stderr")
                                 : _("unknown stream")))));
-      error (EXIT_FAILURE, errno, _("failed to reopen %s with mode %s"),
+      error (0, errno, _("failed to reopen %s with mode %s"),
              f, mode);
-    }
+      return false;
+   }
+  return true;
 }

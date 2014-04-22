@@ -142,7 +142,11 @@ void pipes_on_new_client ()
 void pipes_init ()
 {
     /*if (O_BINARY && !isatty(STDIN_FILENO)) {  <- tail.c does not reopen tty but I can't figure out why... */
-    xfreopen(NULL, "rb", stdin);
+    if ( ! xfreopen(NULL, "rb", stdin)) {
+        fputs(_("Are you sharing stdin with a privileged process? "
+                "Try launching 'cat | tailserver ...' instead."), stderr);
+        exit(EXIT_FAILURE);
+    }
 #ifdef HAVE_FCNTL_NONBLOCK
     fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 #endif
