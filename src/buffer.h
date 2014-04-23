@@ -34,7 +34,7 @@ size_t buffer_available_for_append ();
 bool buffer_set_appended (size_t size); /* Invalidates all pointers */
 
 /* Read */
-size_t buffer_size ();
+size_t buffer_tail_size ();
 const char* buffer_get_tail_chunk ();
 size_t buffer_get_tail_offset ();
 size_t buffer_chunk_size (const char* chunk); /* Can only read small(!) size chunks at a time. Returns 0 at end (only). */

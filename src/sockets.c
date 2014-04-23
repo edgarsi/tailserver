@@ -116,11 +116,11 @@ static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t
 
 static void tailer_send_buffered_tail (tailer_t* tailer)
 {
-    /* Buffer size */
+    /* Tail size */
 
     {
         char s[1024];
-        sprintf(s, "%llu\n", (unsigned long long int)buffer_size());
+        sprintf(s, "%llu\n", (unsigned long long int)buffer_tail_size());
         size_t strlen_s = strlen(s);
 
         ssize_t size_written = tailer_write_blocking(tailer, s, strlen_s);
@@ -132,7 +132,7 @@ static void tailer_send_buffered_tail (tailer_t* tailer)
         }
     }
 
-    /* Contents of the buffer */
+    /* Contents of the tail */
 
     const char* pos = buffer_get_tail_chunk();
     size_t offset = buffer_get_tail_offset();

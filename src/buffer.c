@@ -64,11 +64,11 @@ static linebuffer_t* first;
 static linebuffer_t* last;
 static linebuffer_t* append; /* Empty buffer for new inputs */ 
 static size_t total_lines;
-static size_t total_bytes;
+static size_t total_bytes; /* only tracked if 'count_lines' */
 
 static linebuffer_t* tail_buffer;
 static size_t tail_offset;
-static size_t lines_up_to_tail_buffer;
+static size_t lines_up_to_tail_buffer; /* only tracked if 'count_lines' */
 static size_t bytes_up_to_tail_buffer;
 
 
@@ -89,6 +89,7 @@ static void keep_track_of_tail_lines (uintmax_t n_lines)
 {
     /* First, skip over unneeded buffers.  */
     while (total_lines - lines_up_to_tail_buffer - tail_buffer->nlines > n_lines) {
+        bytes_up_to_tail_buffer += tail_buffer->nbytes;
         lines_up_to_tail_buffer += tail_buffer->nlines;
         tail_buffer = tail_buffer->next;
     }
@@ -242,9 +243,10 @@ bool buffer_set_appended (size_t size)
     return true;
 }
 
-size_t buffer_size ()
+size_t buffer_tail_size ()
 {
-    return total_bytes;
+    fdebugf(stderr, "%zu - %zu - %zu\n", total_bytes, bytes_up_to_tail_buffer, tail_offset);
+    return total_bytes - bytes_up_to_tail_buffer - tail_offset;
 }
 
 const char* buffer_get_tail_chunk ()
