@@ -49,7 +49,7 @@
 #include <ev.h>
 
 #define debug(...)
-/*#define debug(x) fputs(x, stderr)*/
+/*#define debug(x) {fputs(x, stderr);}*/
 
 
 static ev_io stdin_watcher;

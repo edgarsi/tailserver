@@ -37,7 +37,7 @@
 
 
 #define debug(...)
-/*#define debug(x) fputs(x, stderr)*/
+/*#define debug(x) {fputs(x, stderr);}*/
 #define fdebugf(...)
 /*#define fdebugf fprintf*/
 

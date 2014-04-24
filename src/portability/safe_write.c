@@ -19,6 +19,7 @@
 #include "safe_write.h"
 
 #include <errno.h>
+#include <stdio.h>
 
 
 #define PANIC_LOOP_ITERATIONS 1000000 /* educated guess */

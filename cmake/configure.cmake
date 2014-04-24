@@ -45,7 +45,7 @@ IF(CMAKE_COMPILER_IS_GNUCC)
     -Wnested-externs -Wcast-qual -Wshadow -Wunreachable-code
     -Wlogical-op -Wfloat-equal -Wstrict-aliasing=2 -Wredundant-decls
     -fno-omit-frame-pointer -ffloat-store -fno-common -fstrict-aliasing
-    -fno-strict-aliasing)
+    -fno-strict-aliasing -Wno-variadic-macros)
   STRING(REPLACE ";" " " GCC_FLAGS "${GCC_FLAGS_LIST}")
   
   # Debug

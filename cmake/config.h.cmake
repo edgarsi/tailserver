@@ -151,5 +151,7 @@ time than leaving it in.
 #define PACKAGE_VERSION "@VERSION@"
 #define VERSION "@VERSION@"
 
+/* Don't let empty translation units bother us. */
+typedef int MY_CONFIG_H__int;
 
 #endif

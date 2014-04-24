@@ -46,6 +46,7 @@
 #include "bzero.h"
 #include "offsetof.h"
 #include "strmov.h"
+#include "safe_write.h"
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own event handling */
 #include <ev.h>
@@ -58,7 +59,7 @@
 #endif
 
 #define debug(...)
-/*#define debug(x) fputs(x, stderr)*/
+/*#define debug(x) {fputs(x, stderr);}*/
 
 
 /* Test accept this many times. */
@@ -120,10 +121,13 @@ static void tailer_send_buffered_tail (tailer_t* tailer)
 
     {
         char s[1024];
+        size_t strlen_s;
+        ssize_t size_written;
+        
         sprintf(s, "%llu\n", (unsigned long long int)buffer_tail_size());
-        size_t strlen_s = strlen(s);
+        strlen_s = strlen(s);
 
-        ssize_t size_written = tailer_write_blocking(tailer, s, strlen_s);
+        size_written = tailer_write_blocking(tailer, s, strlen_s);
 
         if (size_written < (ssize_t)strlen_s) {
             debug("written too little (writing size)\n");
@@ -134,23 +138,25 @@ static void tailer_send_buffered_tail (tailer_t* tailer)
 
     /* Contents of the tail */
 
-    const char* pos = buffer_get_tail_chunk();
-    size_t offset = buffer_get_tail_offset();
-    size_t chunk_size = buffer_chunk_size(pos);
+    {
+        const char* pos = buffer_get_tail_chunk();
+        size_t offset = buffer_get_tail_offset();
+        size_t chunk_size = buffer_chunk_size(pos);
 
-    while (chunk_size > 0) {
+        while (chunk_size > 0) {
 
-        ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
-
-        if (size_written < (ssize_t)(chunk_size - offset)) {
-            debug("written too little\n");
-            tailer_final(tailer);
-            break;
+            ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
+    
+            if (size_written < (ssize_t)(chunk_size - offset)) {
+                debug("written too little\n");
+                tailer_final(tailer);
+                break;
+            }
+            debug("looking for the next chunk\n");
+            pos = buffer_advance_chunk(pos);
+            offset = 0;
+            chunk_size = buffer_chunk_size(pos);
         }
-        debug("looking for the next chunk\n");
-        pos = buffer_advance_chunk(pos);
-        offset = 0;
-        chunk_size = buffer_chunk_size(pos);
     }
 }
 
@@ -162,7 +168,7 @@ void sockets_write_blocking (char* buf, ssize_t size)
         ssize_t size_written = tailer_write_blocking(tailer, buf, size);
         
         if (size_written < size) {
-            debug("misbehaving client\n");
+            debug("misbehaving client\n")
             tailer_t* next = tailer->next;
             tailer_final(tailer); /* Destroy misbehaving clients */
             tailer = next;
