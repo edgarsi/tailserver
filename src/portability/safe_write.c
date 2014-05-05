@@ -36,7 +36,7 @@ ssize_t safe_write (int fd, const char* buf, ssize_t size)
             break;
         }
 
-        n = write(fd, buf, size);
+        n = write(fd, buf, (size_t)size);
         
     } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
 
