@@ -1,31 +1,50 @@
 
 # Most of the sources are not in the core
-SET(SOURCES
+SET(COMMON_SOURCES
 	coreutils/closeout.c
 	coreutils/close-stream.c
 	coreutils/error.c
-	coreutils/fadvise.c
 	coreutils/fpending.c
-	coreutils/freopen-safer.c
 	coreutils/version-etc.c
-	coreutils/xfreopen.c
 	coreutils/xstrtoumax.c
 	portability/safe_write.c
 	portability/strmov.c
 	buffer.c
+)
+SET(SERVER_SOURCES
+	${COMMON_SOURCES}
+	coreutils/fadvise.c
+	coreutils/freopen-safer.c
+	coreutils/xfreopen.c
 	pipes.c
 	sockets.c
 	tailserver.c
 )
+SET(CLIENT_SOURCES
+	${COMMON_SOURCES}
+	coreutils/xstrtod.c
+	clientconn.c
+	clientloop.c
+	clientpipes.c
+	evsleep.c
+	tailclient.c
+)
+# These aren't used because libev is prefered so that libev can handle signals while sleeping.
+#	coreutils/dtotimespec.c
+#	coreutils/xnanosleep.c
 
 INCLUDE_DIRECTORIES(
 	${CMAKE_CURRENT_SOURCE_DIR}/coreutils
 	${CMAKE_CURRENT_SOURCE_DIR}/portability
 )
 
-ADD_EXECUTABLE(tailserver ${SOURCES})
+ADD_EXECUTABLE(tailserver ${SERVER_SOURCES})
 TARGET_LINK_LIBRARIES(tailserver ev)
 INSTALL_TARGETS(tailserver DESTINATION ${INSTALL_BINDIR})
+
+ADD_EXECUTABLE(tailclient ${CLIENT_SOURCES})
+TARGET_LINK_LIBRARIES(tailclient ev)
+INSTALL_TARGETS(tailclient DESTINATION ${INSTALL_BINDIR})
 
 FOREACH(tool glibtoolize libtoolize aclocal autoconf autoheader automake gtar 
  tar git)

@@ -1,3 +1,4 @@
+=== tailserver ===
 
 -(disappointed to find that nobody has cared enough to make any)somewhere must be tools to test on vast amount of platforms automatically.
 -(don't waste time)test with 65535 and more clients sending SYN without a followup
@@ -19,4 +20,13 @@ Slow stdout test:
 
 Slow stdin test:
 Wait.. what? Trivially tested by test/slow_server.sh 
+
+
+=== tailclient ===
+
+.block reading by stopping tailcient for a while
+.block writing by stopping tailserver for a while
+.tailserver violate protocol
+.tailserver of 0 size buffer
+/(established connections don't care)brutally delete socket file
 

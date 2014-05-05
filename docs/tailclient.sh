@@ -1,10 +1,11 @@
 #!/bin/bash
 
 if [ "$1" == "" -o "$1" == "-h" -o "$1" == "--help" ]; then
+	echo "NOTE: This script is deprecated in favour of 'tailclient' executable."
 	echo "Usage: tailcient.sh [-w] [<-n|-c> K] [-f] <SOCKET_FILE>"
 	echo -e "\t-w\tIf SOCKET_FILE does not exist, wait until it appears"
 	echo -e "\tThe other arguements act as they do for 'tail'."
-	echo -e "\tNote that the argument order is fixed... in this version."
+	echo -e "\tNote that this script requires the fixed order of arguments."
 	exit
 fi
 

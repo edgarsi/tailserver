@@ -23,12 +23,12 @@ you can run
 <pre style="display: inline">myprogram | <b>tailserver logfile.sock</b> | gzip > logfile.gz</pre>
 
 Reading the tail:  
-`tailclient -n 100 -f logfile.sock`  
-`tailclient -n 5 logfile.sock`  
+`tailclient logfile.sock -n 100 -f`  
+`tailclient logfile.sock -n 5`  
 `...`  
 
 ### Install
-Dependencies: cmake, libev, socat  
+Dependencies: cmake, libev  
 ```
 git clone git://github.com/edgarsi/tailserver.git
 cd tailserver
@@ -47,11 +47,11 @@ This example combines all of these:
 tailclient -w -f logfile.sock | grep ERROR > errorfile.txt &
 {	sleep 3600
 	echo "[Works for more than an hour at $(date)]"
-	tailclient -n 100 logfile.sock
+	tailclient logfile.sock -n 100
 	while [ 1 ]; do
 		sleep 600
 		echo -e "...\n...\n...\n[Last lines at $(date)]"
-		tailclient -n 10 logfile.sock
+		tailclient logfile.sock -n 10
 	done
 } > longrun_debug.txt & WAITPID=$!
 myprogram | tailserver -w logfile.sock | lzop > logfile.lzo 

@@ -36,7 +36,7 @@
 # There is the possibility to further fine-tune installation directories.
 # Several variables can be overwritten:
 #
-# - INSTALL_BINDIR          (directory with tailserver)
+# - INSTALL_BINDIR          (directory with tailserver and tailclient)
 # - INSTALL_DOCREADMEDIR    (readme and similar)
 # - INSTALL_MANDIR          (man pages)
 #

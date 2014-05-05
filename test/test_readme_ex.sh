@@ -9,11 +9,11 @@ myprogram()
 tailclient -w -f logfile.sock | grep ERROR > errorfile.txt &
 {	sleep 10
 	echo "[Works for more than a minute at $(date)]"
-	tailclient -n 100 logfile.sock
+	tailclient logfile.sock -n 100
 	while [ -S logfile.sock ]; do
 		sleep 1
 		echo -e "...\n...\n...\n[Last lines at $(date)]"
-		tailclient -n 10 logfile.sock
+		tailclient logfile.sock -n 10
 	done
 } > longrun_debug.txt & WAITPID=$!
 myprogram | tailserver -w logfile.sock | lzop > logfile.lzo

@@ -16,8 +16,9 @@
 # Create man pages. Always generate the docs and push them to HEAD, so that there's no perl dependency for users.
 ADD_CUSTOM_TARGET(gendocs
 	COMMAND perl help2man -N -i tailserver.x -o tailserver.1 ${CMAKE_BINARY_DIR}/src/tailserver.exe
+	COMMAND perl help2man -N -i tailclient.x -o tailclient.1 ${CMAKE_BINARY_DIR}/src/tailclient.exe
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	DEPENDS tailserver
+	DEPENDS tailserver tailclient
 )
 SET_TARGET_PROPERTIES(gendocs PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
