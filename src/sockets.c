@@ -73,7 +73,7 @@ typedef SOCKET_SIZE_TYPE size_socket;
 
 
 static const char* socket_file_path;
-static int unix_sock;
+static int unix_sock = INVALID_SOCKET;
 static int socket_flags;
 static uint accept_error_count;
 
@@ -127,7 +127,7 @@ static void tailer_send_buffered_tail (tailer_t* tailer)
         sprintf(s, "%llu\n", (unsigned long long int)buffer_tail_size());
         strlen_s = strlen(s);
 
-        size_written = tailer_write_blocking(tailer, s, strlen_s);
+        size_written = tailer_write_blocking(tailer, s, (ssize_t)strlen_s);
 
         if (size_written < (ssize_t)strlen_s) {
             debug("written too little (writing size)\n");
@@ -145,7 +145,7 @@ static void tailer_send_buffered_tail (tailer_t* tailer)
 
         while (chunk_size > 0) {
 
-            ssize_t size_written = tailer_write_blocking(tailer, pos + offset, chunk_size - offset);
+            ssize_t size_written = tailer_write_blocking(tailer, pos + offset, (ssize_t)(chunk_size - offset));
     
             if (size_written < (ssize_t)(chunk_size - offset)) {
                 debug("written too little\n");
@@ -189,8 +189,8 @@ static void tailer_readable_cb (EV_P_ ev_io* w, int revents)
 
     if (res > 0) {
         /* Client has sent something. End the connection. */
-        /* This feature is not documented but is the heart of tailclient, so won't be changed. */
-        /* This is used for "tail but do not follow" mode. */
+        /* This feature is not documented is used by tailclient to avoid unnecessary */
+        /* transfers when client is in "tail but do not follow" mode. */
     } else
     if (res == 0) {
         /* EOF */
@@ -279,8 +279,7 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
         }
 #endif
     }
-#ifdef HAVE_FCNTL
-    /* TODO: Is there a good reason why listener's flags are set to accepted sockets or just performance I don't need? */
+#ifdef HAVE_FCNTL_NONBLOCK
     fcntl(unix_sock, F_SETFL, socket_flags);
 #endif
     if (new_sock == INVALID_SOCKET) {
@@ -350,7 +349,7 @@ bool sockets_init ()
     /* Create the UNIX socket */
 
     if (strlen(socket_file_path) > (sizeof(UNIXaddr.sun_path) - 1)) {
-        fprintf(stderr, _("The socket file path is too long (> %u): %s"),
+        fprintf(stderr, _("The socket file path is too long (> %u): %s\n"),
                 (uint) sizeof(UNIXaddr.sun_path) - 1, socket_file_path);
         return false;
     }
@@ -384,12 +383,12 @@ bool sockets_init ()
 #endif
 
     if (listen(unix_sock, 65535) < 0) { /* backlog limiting is done with kernel parameters */
-        fprintf(stderr, _("listen() on Unix socket failed with error %d"), errno);
+        fprintf(stderr, _("listen() on Unix socket failed with error %d\n"), errno);
         sockets_final();
         return false;
     }
 
-#ifdef HAVE_FCNTL
+#ifdef HAVE_FCNTL_NONBLOCK
     socket_flags = fcntl(unix_sock, F_GETFL, 0);
 #endif
 
