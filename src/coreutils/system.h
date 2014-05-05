@@ -20,28 +20,11 @@
 #include "config.h"
 
 #include <limits.h>
-
 #include <string.h>
 #include <errno.h>
-
 #include <stdio.h>
 
-/* All the mode bits that can be affected by chmod.  */
-#define CHMOD_MODE_BITS \
-  (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
-
-/* ISDIGIT differs from isdigit, as follows:
-   - Its arg may be any int or unsigned int; it need not be an unsigned char
-     or EOF.
-   - It's typically faster.
-   POSIX says that only '0' through '9' are digits.  Prefer ISDIGIT to
-   isdigit unless it's important to use the locale's definition
-   of 'digit' even when the host does not conform to POSIX.  */
-#define ISDIGIT(c) ((unsigned int) (c) - '0' <= 9)
-
-#define STREQ(a, b) (strcmp (a, b) == 0)
-#define STREQ_LEN(a, b, n) (strncmp (a, b, n) == 0)
-#define STRPREFIX(a, b) (strncmp(a, b, strlen (b)) == 0)
+#include "common-macros.h"
 
 /* Factor out some of the common --help and --version processing code.  */
 
@@ -91,45 +74,6 @@ enum
                  (char *) NULL);					\
     exit (EXIT_SUCCESS);						\
     break;
-
-#ifndef MAX
-# define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef MIN
-# define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef SSIZE_MAX
-# define SSIZE_MAX TYPE_MAXIMUM (ssize_t)
-#endif
-
-#ifndef OFF_T_MIN
-# define OFF_T_MIN TYPE_MINIMUM (off_t)
-#endif
-
-#ifndef OFF_T_MAX
-# define OFF_T_MAX TYPE_MAXIMUM (off_t)
-#endif
-
-#ifndef UID_T_MAX
-# define UID_T_MAX TYPE_MAXIMUM (uid_t)
-#endif
-
-#ifndef GID_T_MAX
-# define GID_T_MAX TYPE_MAXIMUM (gid_t)
-#endif
-
-#ifndef PID_T_MAX
-# define PID_T_MAX TYPE_MAXIMUM (pid_t)
-#endif
-
-/* Use this to suppress gcc's '...may be used before initialized' warnings. */
-#ifdef lint
-# define IF_LINT(Code) Code
-#else
-# define IF_LINT(Code) /* empty */
-#endif
 
 static inline void
 emit_mandatory_arg_note (void)
