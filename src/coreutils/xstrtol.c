@@ -57,14 +57,14 @@
 #endif
 
 static strtol_error
-bkm_scale (__strtol_t *x, int scale_factor)
+bkm_scale (__strtol_t *x, unsigned int scale_factor)
 {
   if (TYPE_SIGNED (__strtol_t) && *x < STRTOL_T_MINIMUM / scale_factor)
     {
       *x = STRTOL_T_MINIMUM;
       return LONGINT_OVERFLOW;
     }
-  if (STRTOL_T_MAXIMUM / scale_factor < *x)
+  if ((__strtol_t)(STRTOL_T_MAXIMUM / scale_factor) < *x)
     {
       *x = STRTOL_T_MAXIMUM;
       return LONGINT_OVERFLOW;
@@ -74,7 +74,7 @@ bkm_scale (__strtol_t *x, int scale_factor)
 }
 
 static strtol_error
-bkm_scale_by_power (__strtol_t *x, int base, int power)
+bkm_scale_by_power (__strtol_t *x, unsigned int base, int power)
 {
   strtol_error err = LONGINT_OK;
   while (power--)
@@ -100,8 +100,8 @@ __xstrtol (const char *s, char **ptr, int strtol_base,
   if (! TYPE_SIGNED (__strtol_t))
     {
       const char *q = s;
-      unsigned char ch = *q;
-      while (isspace (ch))
+      char ch = *q;
+      while (isspace ((unsigned char)ch))
         ch = *++q;
       if (ch == '-')
         return LONGINT_INVALID;
@@ -137,7 +137,7 @@ __xstrtol (const char *s, char **ptr, int strtol_base,
 
   if (**p != '\0')
     {
-      int base = 1024;
+      unsigned int base = 1024;
       int suffixes = 1;
       strtol_error overflow;
 
