@@ -21,7 +21,7 @@
 #include "intmax.h"
 
 /* Default number of items to tail. */
-#define DEFAULT_N_LINES 1000
+extern const unsigned int DEFAULT_N_LINES;
 
 
 /* Configure */

@@ -44,6 +44,9 @@
 #define PROGRAM_NAME "tailserver"
 const char *program_name = PROGRAM_NAME;
 
+/* Default number of items to tail. */
+const unsigned int DEFAULT_N_LINES = 1000;
+
 #include "system.h"
 
 static bool ignore_interrupts;
@@ -70,7 +73,7 @@ static void usage (int status)
         printf(_("Usage: %s [OPTION]... <SOCKET_FILE>\n"), program_name);
         printf(_("\
 Copy stdin to stdout, and also serve it to UNIX domain socket connections.\n\
-Give new SOCKET_FILE connections the last %d lines arrived to stdin so far.\n\
+Give new SOCKET_FILE connections the last %u lines arrived to stdin so far.\n\
 Continue giving all new lines that arrive (just like 'tail -f' does).\n\
 "), DEFAULT_N_LINES);
 
@@ -80,7 +83,7 @@ Continue giving all new lines that arrive (just like 'tail -f' does).\n\
   -c, --bytes=K             output the last K bytes\n\
 "), stdout);
         printf(_("\
-  -n, --lines=K             output the last K lines, instead of the last %d\n\
+  -n, --lines=K             output the last K lines, instead of the last %u\n\
 "), DEFAULT_N_LINES);
         fputs(_("\
   -w, --wait                postpone processing stdin until a client connects\n\
@@ -90,9 +93,6 @@ Continue giving all new lines that arrive (just like 'tail -f' does).\n\
 "), stdout);
         fputs(HELP_OPTION_DESCRIPTION, stdout);
         fputs(VERSION_OPTION_DESCRIPTION, stdout);
-        fputs(_("\n\
-SOCKET_FILE will be rewritten if exists (in near future, this behaviour \n\
-will change).\n"), stdout);
         fputs(_("\
 \n\
 K (the number of bytes or lines) may have a multiplier suffix:\n\
@@ -174,7 +174,7 @@ static void server_init ()
 
     /* SIGPIPE is called when write on any fd fails with EPIPE, even sockets. We can't have that... */
     /* So, let the program stay alive until an attempt to write to the broken STDOUT is made. */
-    signal(SIGPIPE, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN); 
 }
 
 static void server_run ()
