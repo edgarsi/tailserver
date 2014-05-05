@@ -106,7 +106,7 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
     if (res > 0) {
 
         debug("stdin data read!\n");
-        if ( ! buffer_set_appended(res)){
+        if ( ! buffer_set_appended((size_t)res)){
             ev_break(EV_A_ EVBREAK_ALL);
             return;
         }
