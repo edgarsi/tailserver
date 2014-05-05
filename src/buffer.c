@@ -104,12 +104,12 @@ static void keep_track_of_tail_lines (uintmax_t n_lines)
              'total_lines' - 'lines_up_to_tail_buffer' - 'n_lines' <= 'tail_buffer->nlines'.  */
             size_t j;
             for (j = total_lines - lines_up_to_tail_buffer - n_lines; j; --j) {
-                beg = memchr(beg, '\n', buffer_end - beg);
+                beg = memchr(beg, '\n', (size_t)(buffer_end - beg));
                 assert(beg);
                 ++beg;
             }
         }
-        tail_offset = beg - tail_buffer->buffer;
+        tail_offset = (size_t)(beg - tail_buffer->buffer);
     }
 }
 
@@ -187,7 +187,7 @@ bool buffer_set_appended (size_t size)
     if (count_lines) {
         char const *buffer_end = append->buffer + append->nbytes;
         char const *p = append->buffer;
-        while ((p = memchr(p, '\n', buffer_end - p))) {
+        while ((p = memchr(p, '\n', (size_t)(buffer_end - p)))) {
             ++p;
             ++append->nlines;
         }
@@ -323,6 +323,8 @@ void buffer_final()
         free(first);
         first = tmp;
     }
-    free(append);
+    if (append) {
+        free(append);
+    }
 }
 

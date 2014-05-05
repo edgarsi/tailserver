@@ -38,11 +38,11 @@ ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCC)
   SET(GCC_FLAGS_LIST -W -Wall -pedantic -Wno-long-long -Wno-unused
-    -Wcast-qual -D_POSIX_SOURCE -D_POSIX_C_SOURCE
+    -Wcast-qual -Wconversion -D_POSIX_SOURCE -D_POSIX_C_SOURCE
     -Wno-missing-braces -Wextra -Wno-missing-field-initializers -Wformat=2
     -Wswitch-default -Wswitch-enum -Wcast-align -Wpointer-arith
     -Wbad-function-cast -Wstrict-overflow=5 -Winline
-    -Wnested-externs -Wcast-qual -Wshadow -Wunreachable-code
+    -Wnested-externs -Wshadow -Wunreachable-code
     -Wlogical-op -Wfloat-equal -Wstrict-aliasing=2 -Wredundant-decls
     -fno-omit-frame-pointer -ffloat-store -fno-common -fstrict-aliasing
     -fno-strict-aliasing -Wno-variadic-macros)
