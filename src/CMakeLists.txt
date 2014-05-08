@@ -10,6 +10,7 @@ SET(COMMON_SOURCES
 	portability/safe_write.c
 	portability/strmov.c
 	buffer.c
+	stdout.c
 )
 SET(SERVER_SOURCES
 	${COMMON_SOURCES}
