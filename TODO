@@ -15,3 +15,5 @@
 .in-code todos
 .package ("make dist" fixed)
 .tailclient which doesn't use socat. Move arguments of the README.md examples to the end.
+-why not make the strace wrapper public? - because some find it too funny
+.default to blocking for clients ditching them optionally

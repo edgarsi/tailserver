@@ -58,6 +58,7 @@ static struct option const long_options[] =
     {"bytes", required_argument, NULL, 'c'},
     {"lines", required_argument, NULL, 'n'},
     {"wait", no_argument, NULL, 'w'},
+    {"ditch-slow-tailers", no_argument, NULL, 'd'},
     {"ignore-interrupts", no_argument, NULL, 'i'},
     {GETOPT_HELP_OPTION_DECL},
     {GETOPT_VERSION_OPTION_DECL},
@@ -87,6 +88,9 @@ Continue giving all new lines that arrive (just like 'tail -f' does).\n\
 "), DEFAULT_N_LINES);
         fputs(_("\
   -w, --wait                postpone processing stdin until a client connects\n\
+"), stdout);
+        fputs(_("\
+  -d, --ditch-slow-tailers  disconnect tailers who are slow at reading data\n\
 "), stdout);
         fputs(_("\
   -i, --ignore-interrupts   ignore interrupt signals\n\
@@ -200,8 +204,9 @@ int main (int argc, char** argv)
     uintmax_t n_units = DEFAULT_N_LINES;
     bool wait_for_client = false;
     ignore_interrupts = false;
+    bool tailer_block_forever = true;
 
-    while ((optc = getopt_long(argc, argv, "c:n:wi", long_options, NULL)) != -1) {
+    while ((optc = getopt_long(argc, argv, "c:n:wdi", long_options, NULL)) != -1) {
         switch (optc)
         {
         case 'c':
@@ -222,6 +227,10 @@ int main (int argc, char** argv)
 
         case 'w':
             wait_for_client = true;
+            break;
+
+        case 'd':
+            tailer_block_forever = false;
             break;
 
         case 'i':
@@ -255,6 +264,7 @@ Call with --help for options.\n"), stderr);
         buffer_config_n_units(n_units);
         pipes_config_wait_for_client(wait_for_client);
         sockets_config_file(file_path);
+        sockets_config_tailer_block_forever(tailer_block_forever);
 
         /* Launch */
 

@@ -88,6 +88,8 @@ typedef struct tailer_t {
 
 static tailer_t* first_tailer;
 
+static bool tailer_block_forever;
+
 
 static void tailer_final (tailer_t* tailer);
 
@@ -101,7 +103,11 @@ static ssize_t tailer_write_blocking (tailer_t* tailer, const char* buf, ssize_t
     /*  If this is eats too much CPU, try dynamically removing the O_NONBLOCK. It's still a weird solution though. */
     /* Partial blocking: */
     /*  Use that safe_write being safe will not block forever. Get rid of blocking tailers for stdout must not be blocked. */
-    n = safe_write(tailer->socket, buf, size);
+    if (tailer_block_forever) {
+        n = safe_write_forever(tailer->socket, buf, size);
+    } else {
+        n = safe_write(tailer->socket, buf, size);
+    }
 
     if (n < size) {
         if (n < 0 && (errno == EPIPE /* Broken pipe */
@@ -333,6 +339,11 @@ static void unix_sock_cb (EV_P_ ev_io *w, int revents)
 void sockets_config_file (const char* file_path)
 {
     socket_file_path = file_path;
+}
+
+void sockets_config_tailer_block_forever (bool block)
+{
+    tailer_block_forever = block;
 }
 
 bool sockets_init ()

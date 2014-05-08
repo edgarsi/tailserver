@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 void sockets_config_file (const char* file_path);
+void sockets_config_tailer_block_forever (bool block);
 
 void sockets_write_blocking (char* buf, ssize_t size);
 
