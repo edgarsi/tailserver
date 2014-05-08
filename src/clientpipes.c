@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "safe_write.h"
+#include "stdout.h"
 
 #define debug(...)
 /*#define debug(x) {fputs(x, stderr);}*/
@@ -41,29 +42,12 @@ static bool broken;
 
 bool clientpipes_write_blocking (const char* buf, ssize_t size)
 {
-    ssize_t n;
-
-    do {
-        fdebugf(stderr, "attempting to write %d bytes\n", size);
-
-        n = safe_write(STDOUT_FILENO, buf, size);
-
-        fdebugf(stderr, "written %d bytes with errno %d\n", n, errno);
-        /* stdout is God. retry until time ends. */
-    } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
-
-    if (n < size) {
-        if (n < 0 && errno == EPIPE){
-            /* The pipe of stdout is lost. Let the program end gracefully. */
-        } else {
-            perror(_("Writing to stdout encountered an error"));
-        }
-        debug("stdout broken\n");
+    if (stdout_write_blocking(buf, size)) {
+        return true;
+    } else {
         broken = true;
         return false;
     }
-
-    return true;
 }
 
 bool clientpipes_broken ()

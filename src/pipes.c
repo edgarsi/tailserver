@@ -44,6 +44,7 @@
 
 #include "fcntl_wrap.h"
 #include "safe_write.h"
+#include "stdout.h"
 
 /* Eludes me why everyone (see mysql, postgre, ngircd, redis) tries to implement their own socket event handling */
 #include <ev.h>
@@ -57,21 +58,9 @@ static ev_io stdin_watcher;
 static bool waiting_for_client;
 
 
-static void stdout_write_blocking (char* buf, ssize_t size)
+static void stdout_write_blocking_or_break (char* buf, ssize_t size)
 {
-    ssize_t n;
-
-    do {
-        n = safe_write(STDOUT_FILENO, buf, size);
-        /* stdout is God. retry until time ends. */
-    } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
-
-    if (n < size) {
-        if (n < 0 && errno == EPIPE){
-            /* The pipe of stdout is lost. Let the program end gracefully. */
-        } else {
-            perror(_("Writing to stdout encountered an error"));
-        }
+    if ( ! stdout_write_blocking(buf, size)) {
         ev_break(EV_DEFAULT_UC_ EVBREAK_ALL);
     }
 }
@@ -112,7 +101,7 @@ static void stdin_cb (EV_P_ ev_io* w ATTRIBUTE_UNUSED, int revents ATTRIBUTE_UNU
         }
 
         /* Write immediately */
-        stdout_write_blocking(new_data_start, res);
+        stdout_write_blocking_or_break(new_data_start, res);
         sockets_write_blocking(new_data_start, res);
 
     } else
