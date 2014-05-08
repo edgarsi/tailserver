@@ -22,5 +22,8 @@
 /* Will retry EINTR, EAGAIN and EWOULDBLOCK for a while but will bail out after some indeterminate time. */
 ssize_t safe_write (int fd, const char* buf, ssize_t size);
 
+/* Retry EINTR, EAGAIN and EWOULDBLOCK forever. */
+ssize_t safe_write_forever (int fd, const char* buf, ssize_t size);
+
 
 #endif /* SAFE_WRITE_H */

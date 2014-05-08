@@ -20,7 +20,12 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 
+static bool is_errno_retry_friendly()
+{
+    return (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK);
+}
 
 #define PANIC_LOOP_ITERATIONS 1000000 /* educated guess */
 
@@ -38,7 +43,7 @@ ssize_t safe_write (int fd, const char* buf, ssize_t size)
 
         n = write(fd, buf, (size_t)size);
         
-    } while (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK));
+    } while (n < 0 && is_errno_retry_friendly());
 
     if (safety_counter > PANIC_LOOP_ITERATIONS) {
         perror(_("System is actively blocking a write attempt"));
@@ -47,3 +52,13 @@ ssize_t safe_write (int fd, const char* buf, ssize_t size)
     return n;
 }
 
+ssize_t safe_write_forever (int fd, const char* buf, ssize_t size)
+{
+    ssize_t n;
+    
+    do {
+        n = write(fd, buf, (size_t)size);
+    } while (n < 0 && is_errno_retry_friendly());
+    
+    return n;
+}
